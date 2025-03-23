@@ -1,0 +1,86 @@
+**Emergent Grounds Moderation Strategy: Layered AI + UX Brief for Claude**
+
+---
+
+**Goal:**
+Build a thoughtful, multi-tiered moderation system that supports respectful, transformative conversation while minimizing harm and maintaining a calm, safe, and reflective tone throughout.
+
+---
+
+**🔹 Layer 1: Client-Side Tone Caution (using TensorFlow.js)**
+
+- **Tool**: TensorFlow.js Toxicity model (7-label version)
+- **Trigger**: Real-time text input (as user types, pre-submit)
+- **Output**: 
+  - Flag likely toxic content (e.g. insults, threats, profanity)
+  - Soft visual nudge ("Your message may come across as harsh—reword?")
+  - Optional: animate the shared garden to subtly show withering or tension ripple
+- **Benefit**: Empowers self-awareness before external intervention. No latency. No logging.
+
+---
+
+**🔹 Layer 2: Server-Side Harm Detection (using Perspective API)**
+
+- **Tool**: Google Jigsaw's Perspective API
+- **Trigger**: On message submit
+- **Output**:
+  - Classify each message for:
+    - TOXICITY
+    - SEVERE_TOXICITY
+    - INSULT
+    - IDENTITY_ATTACK
+    - THREAT
+  - If thresholds exceeded (e.g. >0.8):
+    - Soft-block and request rewording
+    - Log pattern of escalating risk
+  - Optional: allow user to bypass once with reflection prompt
+
+---
+
+**🔹 Layer 3: Contextual + Relational Insight (using OpenAI GPT-3.5)**
+
+- **Tool**: GPT-3.5 (for now; later consider GPT-4 or Claude for tone depth)
+- **Trigger**: Every X messages (rolling window, adjustable — default: 6)
+- **Input**:
+  - Rolling window of past conversation
+  - Tone metadata (optional)
+- **Tasks**:
+  - Identify relational tone: tense / warm / dismissive / sarcastic / guarded / curious
+  - Suggest rephrasing if tone is consistently unbalanced (e.g. one-sided, closed-off, invalidating)
+  - Shift from inquiry to gentle **mentoring mode** in high-friction situations:
+    - Offer examples
+    - Suggest common ground
+    - Highlight a misunderstanding (“You may have different definitions of ‘truth.’ Want to explore that?”)
+  - **Don't always intervene**—detect flow vs. rupture
+
+---
+
+**Moderation Modes (Internal State)**
+
+- `tone_state`: {"calm", "tense", "escalating", "reflective"}
+- `intervention_level`: 0-3 scale
+  - 0 = observing
+  - 1 = nudging
+  - 2 = mentoring
+  - 3 = boundary-setting
+- **Escalation path**:
+  - Tension triggers gentle inquiry → repeated invalidation triggers mentoring → sustained harm triggers intervention.
+
+---
+
+**System Feedback UI Ideas (to be explored):**
+- 🌿 *Garden health meter*: Flourishing vs. Wilting
+- 💬 Soft nudge on flagged messages: “How might this land with the other person?”
+- 🌱 Reflection suggestion: “Would you like to take a breath and rephrase this in a way that better honors the space between you?”
+
+---
+
+**Next Steps for Claude**
+1. Integrate TensorFlow.js model client-side with input watcher
+2. Call Perspective API on message submit, store and log
+3. Introduce a tone-state evaluator function powered by GPT-3.5 (post message batch)
+4. Implement state-based moderation response system (0–3 levels)
+
+**End goal:** A moderator that doesn’t dominate, but listens *like a good therapist or jazz musician*—ready to intervene with skill, but only when the moment calls for it.
+
+---

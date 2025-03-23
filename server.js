@@ -125,11 +125,15 @@ io.on('connection', (socket) => {
         return p ? `${p.name} (${id})` : `Unknown (${id})`;
       }));
       
+      // Get conversation starters if this is a new conversation
+      const conversationStarters = aiModerator.getConversationStarters(roomId);
+      
       // Send welcome message to the participant
       socket.emit('joined', {
         roomId,
         name,
-        isNewRoom: false
+        isNewRoom: false,
+        conversationStarters: conversationStarters
       });
       
       // Notify room of the new participant
@@ -196,16 +200,63 @@ io.on('connection', (socket) => {
       
       // Process with AI moderator
       console.log(`[Server] Processing message with AI moderator for room ${roomId}`);
+      // Note: processMessage is now async due to Perspective API integration
       const aiResponse = await aiModerator.processMessage(roomId, message);
       
       if (aiResponse) {
         console.log(`[Server] Received AI response: ${aiResponse.content}`);
-        // Add a slight delay before sending the AI response
-        setTimeout(() => {
-          console.log(`[Server] Sending AI response to room ${roomId}`);
-          sessionStore.addMessage(roomId, aiResponse);
-          io.to(roomId).emit('system_message', aiResponse);
-        }, 2000);
+        
+        // Check if this is a force disconnect message
+        if (aiResponse.metadata && aiResponse.metadata.forceDisconnect) {
+          console.log(`[Server] Force disconnect triggered for user ${socket.id} in room ${roomId}`);
+          
+          // Send disconnect notification to the specific user
+          socket.emit('force_disconnect', {
+            content: aiResponse.content,
+            reason: aiResponse.metadata.reason
+          });
+          
+          // Also notify the room
+          sessionStore.addMessage(roomId, {
+            type: 'system',
+            content: `${name} has been removed from the conversation due to moderation.`
+          });
+          
+          io.to(roomId).emit('system_message', {
+            type: 'system',
+            content: `${name} has been removed from the conversation due to moderation.`
+          });
+          
+          // Force disconnect the socket after a short delay to ensure the message is received
+          setTimeout(() => {
+            socket.disconnect(true);
+          }, 1000);
+        }
+        // Check if this is a cooldown message
+        else if (aiResponse.metadata && aiResponse.metadata.cooldown) {
+          // Send cooldown notification to the specific user
+          socket.emit('cooldown', {
+            content: aiResponse.content,
+            duration: aiResponse.metadata.duration || 10 // Use provided duration or default to 10 seconds
+          });
+          
+          // Also send the message to the room so everyone sees it
+          sessionStore.addMessage(roomId, {
+            type: 'system',
+            content: aiResponse.content
+          });
+          io.to(roomId).emit('system_message', {
+            type: 'system',
+            content: aiResponse.content
+          });
+        } else {
+          // Add a slight delay before sending the AI response
+          setTimeout(() => {
+            console.log(`[Server] Sending AI response to room ${roomId}`);
+            sessionStore.addMessage(roomId, aiResponse);
+            io.to(roomId).emit('system_message', aiResponse);
+          }, 2000);
+        }
       } else {
         console.log(`[Server] No AI response generated for this message`);
       }

@@ -26,7 +26,10 @@ This project creates a two-person real-time conversation space moderated by an A
 
 - **Real-time chat** using Socket.io
 - **Poetic participant names** assigned automatically
-- **AI moderation** that offers reflective prompts
+- **Layered AI moderation system:**
+  - **Layer 1:** Client-side tone caution using TensorFlow.js
+  - **Layer 2:** Server-side harm detection using Perspective API
+  - **Layer 3:** Contextual + relational insight using OpenAI GPT-3.5
 - **Ritual entry & intention setting**
 - **Minimalist, calming UI** with soft colors and thoughtful spacing
 
@@ -46,10 +49,14 @@ root/
 │   ├── index.html          // Landing page
 │   ├── conversation.html   // Chat UI
 │   ├── manifesto.html      // Project manifesto
-│   └── css/
-│       └── styles.css      // Styling
+│   ├── ritual.html         // Ritual entry experience
+│   ├── css/
+│   │   └── styles.css      // Styling
+│   └── js/
+│       └── harm-detection.js // Client-side tone caution (Layer 1)
 ├── server.js               // Express + Socket.io server
-├── ai-moderator.js         // Logic to interface with OpenAI/Claude
+├── ai-moderator.js         // AI moderation logic (Layer 3)
+├── perspective-api.js      // Server-side harm detection (Layer 2)
 ├── session-store.js        // Manage in-memory sessions
 ├── package.json            // Dependencies
 └── .env                    // Environment variables (not in repo)
@@ -78,8 +85,15 @@ root/
 3. Create a `.env` file in the root directory with the following variables:
    ```
    PORT=3000
-   # Optional: Add your OpenAI API key to enable AI moderation
-   # OPENAI_API_KEY=your_api_key_here
+   NODE_ENV=development
+   
+   # OpenAI Configuration - Layer 3: Contextual + Relational Insight
+   OPENAI_API_KEY=your_openai_api_key_here
+   OPENAI_MODEL=gpt-3.5-turbo
+   
+   # Google Perspective API Key - Layer 2: Server-Side Harm Detection
+   # Get your API key from: https://developers.perspectiveapi.com/s/docs-get-started
+   PERSPECTIVE_API_KEY=your_perspective_api_key_here
    ```
 
 4. Start the server
@@ -93,10 +107,14 @@ root/
 
 1. Open the application in your browser
 2. Click "Enter Conversation Space"
-3. You'll be assigned a poetic name and placed in a room
-4. Wait for another participant to join, or open another browser window to simulate a second participant
-5. Begin your conversation
-6. The AI moderator will occasionally offer reflective prompts
+3. Complete the ritual entry process to set your intentions
+4. You'll be assigned a poetic name and placed in a room
+5. Wait for another participant to join, or open another browser window to simulate a second participant
+6. Begin your conversation with the support of the layered moderation system:
+   - As you type, the client-side TensorFlow.js model analyzes your message for potentially harmful content
+   - When you send a message, the server-side Perspective API performs a deeper analysis
+   - The OpenAI-powered moderator offers reflective prompts and intervenes if needed
+7. The conversation is guided by gentle AI interventions that help maintain a respectful, thoughtful space
 
 ## License
 

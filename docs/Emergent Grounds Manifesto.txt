@@ -39,6 +39,8 @@ This is not about debate, winning, or agreement. It is about *emergence*. The sp
 **Expanded Concepts:**
 - **Echo Chambers vs. Living Fields**: Echo chambers are closed loops that replay old patterns. The space between is a living field—unpredictable, alive, and co-created. This experience is designed to be fertile, not repetitive; emergent, not algorithmic.
 - **Relational Neuroplasticity**: This framework aims not only for intellectual insight but for the forging of new neural pathways through shared presence. The conversation becomes a practice of transformation—not just of thought, but of being.
+- **Tone Feedback Mechanism**: The conversation interface may include gentle visual feedback, such as shifting background color or animated soil quality, symbolizing the flourishing or wilting of the emergent ground.
+- **Dynamic Moderation Scaling**: Moderation behavior adapts based on a rolling emotional tone score. Low-severity comments may invite reflection. Consistent patterns of tension trigger gentle mentorship or deeper guidance.
 
 **Pilot Reflections:**
 The first Emergent Grounds conversation took place in a prototype facilitated by ChatGPT, with the user and a simulated partner exploring grief, cycles of violence, and difficult language around identity. The outcome was profound:
@@ -59,4 +61,3 @@ To help people form *new neural pathways of dialogue*, so that over time, we not
 ---
 
 (Working draft; structure will evolve as design and prototyping begin.)
-

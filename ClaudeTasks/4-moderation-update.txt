@@ -1,0 +1,46 @@
+AI Moderation Design Update – Emergent Grounds
+Date: 2025-03-23
+
+Purpose:
+To refine the AI moderator's behavior in Emergent Grounds conversations for improved impact, especially in emotionally charged or complex discussions. The focus is on subtle, adaptive moderation that balances poetic presence with grounded guidance.
+
+---
+
+1. SYSTEM BEHAVIOR UPDATES
+
+A. Dynamic Tone Modulation (Internal Only)
+- The AI moderator adapts its tone based on conversational context.
+- Three moderation tones:
+  🌿 Reflective – Gentle, metaphorical, spacious (default)
+  🪨 Grounded – Practical, coaching, human
+  🔥 Directive – Firm, respectful intervention
+- Tone is chosen internally by moderation logic, NOT user-set.
+- Model adjusts tone based on:
+  - Message tension/hostility score
+  - Participant distress signals (e.g. “I feel attacked”)
+  - Repetition or conversational derailment
+
+B. Intervention Timing
+- Default interval remains every 2 participant messages
+- System now includes “urgency override”:
+  - If flagged content is detected (e.g. slurs, identity invalidation), AI can immediately intervene
+  - On cooldown if no further tension follows (minimum 4 messages)
+
+C. De-escalation Coaching
+- When tone rises:
+  - Switch to 🔥 Directive with mentoring prompt: 
+    “Would you like help rephrasing that in a way that holds your truth while respecting theirs?”
+  - Offer examples only when necessary:
+    “Here’s one way it could sound while still sharing your view…”
+
+D. Cooldown Mechanism (UX Placeholder)
+- If one participant is sending rapid or hostile messages:
+  - AI sends message: “Let’s pause for a breath.”
+  - Typing temporarily disabled for 10 seconds (handled via front-end JS)
+  - Repeated behavior increases cooldown to 20s, etc.
+
+---
+
+Note: All design choices aim to preserve the Emergent Grounds philosophy:
+"Not to control the conversation, but to tend to the space between."
+

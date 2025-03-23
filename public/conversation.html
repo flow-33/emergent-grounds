@@ -10,6 +10,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600&display=swap" rel="stylesheet">
     <!-- Socket.io client library -->
     <script src="/socket.io/socket.io.js"></script>
+    <!-- Harm detection script -->
+    <script src="/js/harm-detection.js"></script>
+    <!-- Conversation visualization script -->
+    <script src="/js/conversation-visualization.js"></script>
 </head>
 <body class="conversation-page">
     <!-- Loading overlay -->
@@ -29,6 +33,19 @@
         <div class="ritual-prompt">
             <p>Take a moment to breathe and set an intention for this conversation.</p>
         </div>
+        
+        <!-- Conversation starters area -->
+        <div class="conversation-starters" id="conversation-starters" style="display: none;">
+            <p class="starters-heading">Conversation Starters:</p>
+            <div class="starters-container" id="starters-container">
+                <!-- Starters will be dynamically inserted here -->
+            </div>
+        </div>
+
+        <!-- Conversation visualization area -->
+        <div class="visualization-container">
+            <canvas id="conversation-visualization" class="conversation-canvas"></canvas>
+        </div>
 
         <!-- Conversation messages area -->
         <div class="messages-container" id="messages-container">
@@ -38,7 +55,9 @@
         <!-- Input area -->
         <div class="input-container">
             <textarea id="message-input" class="message-input" placeholder="What wants to be said?"></textarea>
+            <div id="tone-warning" class="tone-warning hidden"></div>
             <button id="send-button" class="send-button">Plant</button>
+            <div id="cooldown-message" class="cooldown-message" style="display: none;"></div>
         </div>
     </div>
 
@@ -52,12 +71,48 @@
         const sendButton = document.getElementById('send-button');
         const participantInfo = document.getElementById('participant-info');
         const loadingOverlay = document.getElementById('loading-overlay');
+        const conversationStarters = document.getElementById('conversation-starters');
+        const startersContainer = document.getElementById('starters-container');
+        const cooldownMessage = document.getElementById('cooldown-message');
+        const toneWarning = document.getElementById('tone-warning');
+        
+        // Cooldown state
+        let isInCooldown = false;
+        let cooldownTimer = null;
         
         // Participant data
         let participantData = {
             roomId: null,
             name: null
         };
+        
+        // Initialize harm detection and visualization
+        window.addEventListener('DOMContentLoaded', () => {
+            // Initialize harm detection with UI elements
+            window.harmDetection.initialize({
+                messageInput: messageInput,
+                sendButton: sendButton,
+                warningElement: toneWarning,
+                onWarning: (categories, highestCategory, score) => {
+                    console.log(`[Harm Detection] Warning triggered: ${highestCategory} (${score.toFixed(2)})`);
+                    
+                    // Add tension ripple to visualization when warning is triggered
+                    if (window.conversationVisualization) {
+                        window.conversationVisualization.addTensionRipple(score);
+                    }
+                },
+                onClear: () => {
+                    console.log('[Harm Detection] Warning cleared');
+                }
+            });
+            
+            // Initialize conversation visualization
+            const visualizationCanvas = document.getElementById('conversation-visualization');
+            if (visualizationCanvas && window.conversationVisualization) {
+                window.conversationVisualization.initialize(visualizationCanvas);
+                console.log('[Visualization] Initialized conversation visualization');
+            }
+        });
         
         // Helper function to scroll to bottom of messages
         function scrollToBottom() {
@@ -134,7 +189,36 @@
             
             // Clear any example messages
             messagesContainer.innerHTML = '';
+            
+            // Display conversation starters if available
+            if (data.conversationStarters && data.conversationStarters.length > 0) {
+                displayConversationStarters(data.conversationStarters);
+            }
         });
+        
+        // Function to display conversation starters
+        function displayConversationStarters(starters) {
+            // Clear any existing starters
+            startersContainer.innerHTML = '';
+            
+            // Add each starter to the container
+            starters.forEach(starter => {
+                const starterButton = document.createElement('button');
+                starterButton.className = 'starter-button';
+                starterButton.textContent = starter;
+                
+                // When clicked, insert the starter text into the input field
+                starterButton.addEventListener('click', () => {
+                    messageInput.value = starter;
+                    messageInput.focus();
+                });
+                
+                startersContainer.appendChild(starterButton);
+            });
+            
+            // Show the starters container
+            conversationStarters.style.display = 'block';
+        }
         
         // Handle message history
         socket.on('message_history', (messages) => {
@@ -149,6 +233,43 @@
             
             // Scroll to bottom
             scrollToBottom();
+            
+            // Initialize visualization with message history
+            if (window.conversationVisualization) {
+                // Reset visualization state
+                window.conversationVisualization.soilHealth = 1.0;
+                window.conversationVisualization.messageCount = 0;
+                window.conversationVisualization.positiveInteractions = 0;
+                window.conversationVisualization.negativeInteractions = 0;
+                window.conversationVisualization.plantGrowthStage = 0;
+                
+                // Process each message to update visualization
+                messages.forEach(message => {
+                    if (message.type === 'system') {
+                        // Check if this is a moderation message
+                        const isModeration = message.content.includes('pause') || 
+                                           message.content.includes('tone') ||
+                                           message.content.includes('consider');
+                        
+                        if (isModeration) {
+                            // Add tension ripple for moderation messages
+                            window.conversationVisualization.addTensionRipple(0.3);
+                        } else {
+                            // Add positive message for reflections and other system messages
+                            window.conversationVisualization.addMessage(message, true);
+                        }
+                    } else {
+                        // Determine if participant message is positive or negative
+                        const isPositive = !message.content.includes('!') && 
+                                         !message.content.toUpperCase().includes(message.content) &&
+                                         message.content.length > 10;
+                        
+                        window.conversationVisualization.addMessage(message, isPositive);
+                    }
+                });
+                
+                console.log('[Visualization] Initialized with message history:', messages.length);
+            }
         });
         
         // Handle new messages
@@ -156,6 +277,17 @@
             const messageElement = createMessageElement(message);
             messagesContainer.appendChild(messageElement);
             scrollToBottom();
+            
+            // Update visualization with new message
+            if (window.conversationVisualization) {
+                // Determine if message is positive or negative based on content
+                // This is a simple heuristic - in a real implementation, you would use sentiment analysis
+                const isPositive = !message.content.includes('!') && 
+                                  !message.content.toUpperCase().includes(message.content) &&
+                                  message.content.length > 10;
+                
+                window.conversationVisualization.addMessage(message, isPositive);
+            }
         });
         
         // Handle system messages
@@ -170,12 +302,109 @@
             
             messagesContainer.appendChild(messageElement);
             scrollToBottom();
+            
+            // Update visualization based on system message content
+            if (window.conversationVisualization) {
+                // Check if this is a moderation message (cooldown, warning, etc.)
+                const isModeration = message.content.includes('pause') || 
+                                    message.content.includes('tone') ||
+                                    message.content.includes('consider');
+                
+                if (isModeration) {
+                    // Add tension ripple for moderation messages
+                    window.conversationVisualization.addTensionRipple(0.5);
+                } else {
+                    // Add positive message for reflections and other system messages
+                    window.conversationVisualization.addMessage(message, true);
+                }
+            }
         });
         
         // Handle errors
         socket.on('error', (error) => {
             console.error('Socket error:', error);
             alert(`Error: ${error.message}`);
+        });
+        
+        // Handle cooldown
+        socket.on('cooldown', (data) => {
+            console.log('Cooldown received:', data);
+            
+            // Set cooldown state
+            isInCooldown = true;
+            
+            // Disable input
+            messageInput.disabled = true;
+            sendButton.disabled = true;
+            
+            // Show cooldown message
+            cooldownMessage.textContent = data.content;
+            cooldownMessage.style.display = 'block';
+            
+            // Update visualization with cooldown effect
+            if (window.conversationVisualization) {
+                // Add multiple tension ripples to visualize cooldown
+                const intensity = data.duration / 10; // Normalize intensity based on duration
+                window.conversationVisualization.addTensionRipple(Math.min(0.8, intensity));
+                
+                // Decrease soil health more significantly for cooldowns
+                const currentHealth = window.conversationVisualization.soilHealth;
+                window.conversationVisualization.updateSoilHealth(Math.max(0.2, currentHealth - 0.15));
+            }
+            
+            // Clear any existing timer
+            if (cooldownTimer) {
+                clearTimeout(cooldownTimer);
+            }
+            
+            // Set timer to re-enable input after cooldown period
+            cooldownTimer = setTimeout(() => {
+                // Re-enable input
+                messageInput.disabled = false;
+                sendButton.disabled = false;
+                
+                // Hide cooldown message
+                cooldownMessage.style.display = 'none';
+                
+                // Reset cooldown state
+                isInCooldown = false;
+                
+                // Focus input
+                messageInput.focus();
+                
+                // Add a small recovery to soil health when cooldown ends
+                if (window.conversationVisualization) {
+                    const currentHealth = window.conversationVisualization.soilHealth;
+                    window.conversationVisualization.updateSoilHealth(Math.min(1.0, currentHealth + 0.05));
+                }
+            }, data.duration * 1000);
+        });
+        
+        // Handle force disconnect
+        socket.on('force_disconnect', (data) => {
+            console.log('Force disconnect received:', data);
+            
+            // Update visualization with severe disruption before disconnecting
+            if (window.conversationVisualization) {
+                // Add multiple severe tension ripples
+                for (let i = 0; i < 3; i++) {
+                    window.conversationVisualization.addTensionRipple(0.9);
+                }
+                
+                // Set soil health to critical level
+                window.conversationVisualization.updateSoilHealth(0.1);
+            }
+            
+            // Show alert with the message
+            alert(`You've been disconnected: ${data.content}`);
+            
+            // Stop visualization animation before redirecting
+            if (window.conversationVisualization) {
+                window.conversationVisualization.stop();
+            }
+            
+            // Redirect to home page
+            window.location.href = 'index.html';
         });
         
         // Send message when button is clicked
@@ -190,11 +419,37 @@
         });
         
         // Send message function
-        function sendMessage() {
+        async function sendMessage() {
             const content = messageInput.value.trim();
             
             // Don't send empty messages
             if (!content) return;
+            
+            // Don't send if in cooldown
+            if (isInCooldown) return;
+            
+            // Check for harmful content before sending
+            if (window.harmDetection && window.harmDetection.checkBeforeSend) {
+                try {
+                    const harmCheck = await window.harmDetection.checkBeforeSend(content);
+                    
+                    if (harmCheck.isHarmful) {
+                        console.log(`[Harm Detection] Pre-send check detected harmful content:`, harmCheck);
+                        
+                        // Show warning
+                        toneWarning.textContent = harmCheck.message || 'Your message may come across as harsh—consider rewording?';
+                        toneWarning.classList.remove('hidden');
+                        
+                        // Add a confirmation dialog
+                        if (!confirm('This message may come across as harmful. Send anyway?')) {
+                            return; // User chose not to send
+                        }
+                    }
+                } catch (error) {
+                    console.error('[Harm Detection] Error in pre-send check:', error);
+                    // Continue with sending if there's an error in the harm detection
+                }
+            }
             
             // Emit the message
             socket.emit('send_message', { content });
@@ -202,8 +457,16 @@
             // Clear input
             messageInput.value = '';
             
+            // Clear any warnings
+            toneWarning.classList.add('hidden');
+            
             // Focus back on input
             messageInput.focus();
+            
+            // Hide conversation starters after first message
+            if (conversationStarters.style.display !== 'none') {
+                conversationStarters.style.display = 'none';
+            }
         }
     </script>
 </body>
