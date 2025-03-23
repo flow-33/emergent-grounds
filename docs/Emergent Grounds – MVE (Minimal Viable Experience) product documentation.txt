@@ -1,0 +1,77 @@
+**Emergent Grounds – MVE (Minimal Viable Experience) Flow**
+
+---
+
+**🎯 Purpose:**
+To prototype a spirit-aligned, real-time conversation space where two people can enter the "garden" and tend to the space between them. This experience should embody Emergent Grounds' values of presence, anonymity, inquiry, and co-created insight.
+
+---
+
+**🌱 Entry Point:**
+Landing page at `emergentgrounds.org`
+
+CTA: **“Tend the Space Between – Start a Conversation”**
+
+Small poetic subtext:
+> "Where words meet wonder. Step into a space of shared presence."
+
+---
+
+**🌼 Matching Interface:**
+- User clicks "Start a Conversation"
+- If **no one else is present**, they are taken to a **waiting garden**
+  - Message: *“The soil is ready. Waiting for someone to meet you here…”*
+  - Optional calming animation (e.g., a slowly blooming flower)
+- If **someone else is already waiting**, match them
+
+---
+
+**🧚 Conversation Ritual Begins:**
+- Both participants are assigned **random poetic names**
+  - Examples: “Quiet Willow” & “Curious Stream”
+  - Name pairs drawn from a library of `tone + nature/entity`
+- AI welcomes them with a **ritual opening**
+  - Lights digital candle
+  - Shares guiding intention
+  - Prompts both users to set a short shared goal (e.g. “What might we unearth today?”)
+
+---
+
+**💬 Real-Time Chat Interface:**
+- Simple, clean interface for conversation
+- System labels each message with their random name (no timestamps needed)
+- AI serves as **gentle guide**:
+  - Suggests inquiry prompts
+  - Offers “Reflection Moments”
+  - Surfaces moments of potential insight as **Insight Seeds**
+
+---
+
+**🌸 Conversation Closure:**
+- When one user ends (or both confirm ending):
+  - AI gives a poetic summary
+    > *"Today the garden received… 3 insight seeds, a shared breath, and a gentle challenge.”*
+  - Users are invited to **plant any key insights** into the Common Garden
+    - (No login required – insights stored as public artifacts)
+
+---
+
+**🪄 Constraints & Ethos:**
+- No profiles or logins
+- No tracking by IP or identity
+- All contributions are anonymous by default
+- Participants can’t see each other’s details (except their poetic names)
+- Observers **not supported** in MVE to preserve intimacy
+
+---
+
+**🗺️ Next Phase: Technical Build Tasks for Claude**
+1. **chat-ui.html / style.css / app.js setup**
+2. Name generation utility (random poetic names)
+3. AI system prompts logic
+4. Real-time session handling (e.g. WebSocket or Railway function)
+5. Insight planting flow
+6. Final recap + optional reflection export
+
+Each task will be separated into its own Claude-ready file, maintaining context.
+

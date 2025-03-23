@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emergent Grounds | Entry Ritual</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600&display=swap" rel="stylesheet">
+    <!-- Socket.io client library -->
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body class="ritual-page">
+    <div class="ritual-container">
+        <div class="ritual-header">
+            <a href="index.html" class="back-link">← Return Home</a>
+        </div>
+
+        <!-- Step 1: Initial welcome -->
+        <div class="ritual-step" id="step-welcome">
+            <h1>You are about to enter a space for shared presence.</h1>
+            <p>Before joining the conversation, let's take a moment to prepare.</p>
+            <button class="ritual-button" id="btn-start-ritual">Begin</button>
+        </div>
+
+        <!-- Step 2: Breathing exercise -->
+        <div class="ritual-step hidden" id="step-breathing">
+            <h2>Take a moment to breathe</h2>
+            <div class="breathing-circle">
+                <div class="circle-text">Breathe</div>
+            </div>
+            <p class="breathing-instruction">Follow the circle as it expands and contracts</p>
+            <button class="ritual-button" id="btn-after-breathing">Continue</button>
+        </div>
+
+        <!-- Step 3: Affirmations -->
+        <div class="ritual-step hidden" id="step-affirmations">
+            <h2>Personal Affirmations</h2>
+            <p>Please confirm each statement to proceed:</p>
+            
+            <div class="affirmation-container">
+                <label class="affirmation-checkbox">
+                    <input type="checkbox" id="affirmation1">
+                    <span>I enter this space with openness</span>
+                </label>
+                
+                <label class="affirmation-checkbox">
+                    <input type="checkbox" id="affirmation2">
+                    <span>I will meet the other with care, not assumptions</span>
+                </label>
+                
+                <label class="affirmation-checkbox">
+                    <input type="checkbox" id="affirmation3">
+                    <span>I leave behind my urgency. I bring presence</span>
+                </label>
+            </div>
+            
+            <button class="ritual-button" id="btn-confirm-affirmations" disabled>Affirm & Continue</button>
+        </div>
+
+        <!-- Step 4: Symbolic action -->
+        <div class="ritual-step hidden" id="step-symbolic">
+            <h2>A Symbolic Gesture</h2>
+            <p>Click to light a candle, symbolizing the light of awareness you bring to this conversation.</p>
+            
+            <div class="candle-container">
+                <div class="candle" id="candle">
+                    <div class="candle-body"></div>
+                    <div class="candle-flame hidden"></div>
+                </div>
+            </div>
+            
+            <button class="ritual-button hidden" id="btn-after-symbolic">Continue</button>
+        </div>
+
+        <!-- Step 5: Waiting for other participant -->
+        <div class="ritual-step hidden" id="step-waiting">
+            <h2>Waiting Room</h2>
+            <p>You have completed your preparation ritual.</p>
+            <p>Waiting for the other participant to complete their ritual...</p>
+            <div class="loading-spinner"></div>
+        </div>
+
+        <!-- Step 6: Threshold moment (when both are ready) -->
+        <div class="ritual-step hidden" id="step-threshold">
+            <h2>Threshold Moment</h2>
+            <div class="threshold-animation">
+                <div class="threshold-circle"></div>
+            </div>
+            <p class="threshold-poem">Like rivers meeting at the ocean,<br>you now step into shared stillness.</p>
+            <button class="ritual-button" id="btn-enter-conversation">Enter Conversation</button>
+        </div>
+    </div>
+
+    <script>
+        // Socket.io connection
+        const socket = io();
+        
+        // DOM elements for ritual steps
+        const stepWelcome = document.getElementById('step-welcome');
+        const stepBreathing = document.getElementById('step-breathing');
+        const stepAffirmations = document.getElementById('step-affirmations');
+        const stepSymbolic = document.getElementById('step-symbolic');
+        const stepWaiting = document.getElementById('step-waiting');
+        const stepThreshold = document.getElementById('step-threshold');
+        
+        // Buttons
+        const btnStartRitual = document.getElementById('btn-start-ritual');
+        const btnAfterBreathing = document.getElementById('btn-after-breathing');
+        const btnConfirmAffirmations = document.getElementById('btn-confirm-affirmations');
+        const btnAfterSymbolic = document.getElementById('btn-after-symbolic');
+        const btnEnterConversation = document.getElementById('btn-enter-conversation');
+        
+        // Affirmation checkboxes
+        const affirmation1 = document.getElementById('affirmation1');
+        const affirmation2 = document.getElementById('affirmation2');
+        const affirmation3 = document.getElementById('affirmation3');
+        
+        // Candle elements
+        const candle = document.getElementById('candle');
+        const candleFlame = document.querySelector('.candle-flame');
+        
+        // Breathing circle
+        const breathingCircle = document.querySelector('.breathing-circle');
+        
+        // Ritual state
+        let roomId = null;
+        let participantName = null;
+        
+        // Helper function to show a step and hide others
+        function showStep(stepToShow) {
+            // Hide all steps
+            [stepWelcome, stepBreathing, stepAffirmations, stepSymbolic, stepWaiting, stepThreshold].forEach(step => {
+                step.classList.add('hidden');
+            });
+            
+            // Show the requested step
+            stepToShow.classList.remove('hidden');
+        }
+        
+        // Step 1: Start ritual button
+        btnStartRitual.addEventListener('click', () => {
+            showStep(stepBreathing);
+            startBreathingAnimation();
+        });
+        
+        // Step 2: Breathing animation
+        function startBreathingAnimation() {
+            breathingCircle.classList.add('animate-breathing');
+        }
+        
+        // After breathing
+        btnAfterBreathing.addEventListener('click', () => {
+            breathingCircle.classList.remove('animate-breathing');
+            showStep(stepAffirmations);
+        });
+        
+        // Step 3: Check if all affirmations are checked
+        function checkAffirmations() {
+            if (affirmation1.checked && affirmation2.checked && affirmation3.checked) {
+                btnConfirmAffirmations.disabled = false;
+            } else {
+                btnConfirmAffirmations.disabled = true;
+            }
+        }
+        
+        affirmation1.addEventListener('change', checkAffirmations);
+        affirmation2.addEventListener('change', checkAffirmations);
+        affirmation3.addEventListener('change', checkAffirmations);
+        
+        // After affirmations
+        btnConfirmAffirmations.addEventListener('click', () => {
+            showStep(stepSymbolic);
+        });
+        
+        // Step 4: Symbolic action (light candle)
+        candle.addEventListener('click', () => {
+            candleFlame.classList.remove('hidden');
+            candle.classList.add('lit');
+            
+            // Show continue button after candle is lit
+            setTimeout(() => {
+                btnAfterSymbolic.classList.remove('hidden');
+            }, 1500);
+        });
+        
+        // After symbolic action
+        btnAfterSymbolic.addEventListener('click', () => {
+            showStep(stepWaiting);
+            
+            // Notify server that ritual is complete
+            socket.emit('ritual_complete');
+        });
+        
+        // Socket event handlers
+        socket.on('connect', () => {
+            console.log('Connected to server');
+        });
+        
+        // When both participants have completed the ritual
+        socket.on('ritual_both_complete', (data) => {
+            console.log('Both participants completed ritual:', data);
+            roomId = data.roomId;
+            participantName = data.name;
+            
+            // Show threshold moment
+            showStep(stepThreshold);
+            
+            // Start threshold animation
+            document.querySelector('.threshold-circle').classList.add('animate-threshold');
+        });
+        
+        // Enter conversation
+        btnEnterConversation.addEventListener('click', () => {
+            // Store ritual completion in session storage
+            sessionStorage.setItem('ritualComplete', 'true');
+            sessionStorage.setItem('roomId', roomId);
+            sessionStorage.setItem('participantName', participantName);
+            
+            // Redirect to conversation page
+            window.location.href = 'conversation.html';
+        });
+        
+        // Handle errors
+        socket.on('error', (error) => {
+            console.error('Socket error:', error);
+            alert(`Error: ${error.message}`);
+        });
+    </script>
+</body>
+</html>

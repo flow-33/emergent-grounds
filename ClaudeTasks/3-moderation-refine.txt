@@ -1,0 +1,54 @@
+PROJECT CONTEXT:
+You are contributing to Emergent Grounds, a minimalist, sacred conversation space between two participants guided gently by an AI moderator. The philosophy emphasizes presence, care, and discovery over debate or performance. A ritualized entry process grounds users in intention before the conversation begins.
+
+The system currently uses a Node.js backend with an `ai-moderator.js` module to manage:
+- reflection messages inserted every N messages
+- moderation based on aggression, message dominance, or profanity
+- system prompts and a poetic tone guiding OpenAI completions
+
+YOUR TASK:
+Refine and expand the moderation module with the following enhancements:
+
+1. **Tone Refinement (Moderation Prompt + Reflections)**
+   - Update the system prompt passed to OpenAI to maintain warmth and presence, but dial down overtly abstract/poetic phrasing.
+   - Reflections should still feel invitational, but more *concrete, clear, and accessible* to a broader audience.
+
+2. **Dynamic Reflection Intervals**
+   - Replace the fixed `every 2 messages` development interval.
+   - Use a dynamic system: 4–6 messages normally, but **earlier reflections (2–3 messages)** only at the start of conversations to gently guide users in.
+   - After ~10 messages, increase interval to 6–8 if users are respectful and balanced.
+   - Use conversation length, message tone, and pacing to inform the interval.
+
+3. **Conversation Starters**
+   - On conversation start, inject 2–3 optional “ice-breaker” prompts that disappear after the first few messages.
+   - These are shown above the input box and can be clicked to insert a starter message.
+   - Examples:
+     - “One hope I carry into this conversation is…”
+     - “What’s something you’ve changed your mind about recently?”
+     - “What’s something you wish more people asked you?”
+
+4. **Moderation Cooldown**
+   - If a participant shows signs of agitation (e.g., all caps, frequent bursts), add a *soft cooldown*:
+     - Temporarily disable their input box for 10 seconds
+     - Accompanied by a calming system message like:  
+       “Let’s take a breath before continuing. You’ll be able to type again shortly.”
+   - Repeat cooldowns increase in duration (e.g., 20s → 30s) per escalation level.
+
+5. **Guardian Moderation Refinement**
+   - Refine the three existing levels:
+     - **Soft**: gentle nudge, e.g., “Take a breath. What might emerge if you pause before continuing?”
+     - **Mirror**: reflects conversational imbalance, e.g., “You've shared a lot. What space might we leave for the other to unfold?”
+     - **Disrupt**: sets a boundary, e.g., “This space depends on mutual care. Perhaps it’s best to return when ready to listen again.”
+   - Escalation logic remains, but should factor in **proximity to prior intervention** and whether the other user has responded since.
+
+6. **Optional future idea (leave a comment for future work)**:
+   - Add a “Tone Preference” toggle at the beginning for participants:
+     - Default = warm, poetic
+     - Optional = more direct, grounded tone
+   - This would allow the AI to slightly adjust the moderation tone for inclusivity.
+
+DELIVERABLE:
+Update `ai-moderator.js` to reflect these improvements with modular functions where possible. Keep all existing logs and helpful console outputs. System messages and AI completions should remain under 2–3 sentences max.
+
+IMPORTANT:
+Do not rewrite the entire file. Modify and extend existing logic where applicable. Be gentle and intentional—this space is sacred, and the code should reflect that.

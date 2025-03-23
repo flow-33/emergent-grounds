@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emergent Grounds | Conversation</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600&display=swap" rel="stylesheet">
+    <!-- Socket.io client library -->
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body class="conversation-page">
+    <!-- Loading overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="loading-content">
+            <p>Entering the conversation space...</p>
+            <div class="loading-spinner"></div>
+        </div>
+    </div>
+
+    <div class="conversation-container">
+        <div class="conversation-header">
+            <a href="index.html" class="back-link">← Return Home</a>
+            <div id="participant-info" class="participant-info"></div>
+        </div>
+        <!-- Optional ritual/reflection prompt area -->
+        <div class="ritual-prompt">
+            <p>Take a moment to breathe and set an intention for this conversation.</p>
+        </div>
+
+        <!-- Conversation messages area -->
+        <div class="messages-container" id="messages-container">
+            <!-- Messages will be dynamically inserted here -->
+        </div>
+
+        <!-- Input area -->
+        <div class="input-container">
+            <textarea id="message-input" class="message-input" placeholder="What wants to be said?"></textarea>
+            <button id="send-button" class="send-button">Plant</button>
+        </div>
+    </div>
+
+    <script>
+        // Socket.io connection
+        const socket = io();
+        
+        // DOM elements
+        const messagesContainer = document.getElementById('messages-container');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        const participantInfo = document.getElementById('participant-info');
+        const loadingOverlay = document.getElementById('loading-overlay');
+        
+        // Participant data
+        let participantData = {
+            roomId: null,
+            name: null
+        };
+        
+        // Helper function to scroll to bottom of messages
+        function scrollToBottom() {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        // Helper function to create message elements
+        function createMessageElement(message) {
+            const messageDiv = document.createElement('div');
+            
+            if (message.type === 'system') {
+                // System message
+                messageDiv.className = 'message system-message';
+                messageDiv.innerHTML = `<p>${message.content}</p>`;
+            } else {
+                // Participant message
+                const isCurrentUser = message.sender === socket.id;
+                messageDiv.className = `message participant-message ${isCurrentUser ? 'participant-1' : 'participant-2'}`;
+                
+                messageDiv.innerHTML = `
+                    <div class="message-content">
+                        <p>${message.content}</p>
+                    </div>
+                    <div class="participant-name">${message.name}</div>
+                `;
+            }
+            
+            return messageDiv;
+        }
+        
+        // Check if ritual is complete when page loads
+        window.addEventListener('load', () => {
+            // Show loading overlay
+            loadingOverlay.style.display = 'flex';
+            
+            // Check if ritual is complete
+            const ritualComplete = sessionStorage.getItem('ritualComplete');
+            const storedRoomId = sessionStorage.getItem('roomId');
+            const storedName = sessionStorage.getItem('participantName');
+            
+            if (ritualComplete === 'true' && storedRoomId && storedName) {
+                console.log('Ritual complete, joining conversation with:', {
+                    roomId: storedRoomId,
+                    name: storedName
+                });
+                
+                // If ritual is complete and we have room info, join with that info
+                socket.emit('join_with_ritual', {
+                    roomId: storedRoomId,
+                    name: storedName
+                });
+                
+                // Clear session storage
+                sessionStorage.removeItem('ritualComplete');
+                sessionStorage.removeItem('roomId');
+                sessionStorage.removeItem('participantName');
+            } else {
+                console.log('Ritual not complete, redirecting to ritual page');
+                // Redirect to ritual page if ritual not complete
+                window.location.href = 'ritual.html';
+            }
+        });
+        
+        // Handle successful join
+        socket.on('joined', (data) => {
+            // Hide loading overlay
+            loadingOverlay.style.display = 'none';
+            
+            // Store participant data
+            participantData = data;
+            
+            // Display participant info
+            participantInfo.textContent = `You are: ${data.name}`;
+            
+            // Clear any example messages
+            messagesContainer.innerHTML = '';
+        });
+        
+        // Handle message history
+        socket.on('message_history', (messages) => {
+            // Clear any existing messages
+            messagesContainer.innerHTML = '';
+            
+            // Add each message to the container
+            messages.forEach(message => {
+                const messageElement = createMessageElement(message);
+                messagesContainer.appendChild(messageElement);
+            });
+            
+            // Scroll to bottom
+            scrollToBottom();
+        });
+        
+        // Handle new messages
+        socket.on('new_message', (message) => {
+            const messageElement = createMessageElement(message);
+            messagesContainer.appendChild(messageElement);
+            scrollToBottom();
+        });
+        
+        // Handle system messages
+        socket.on('system_message', (message) => {
+            const messageElement = createMessageElement(message);
+            
+            // Add ritual-entry class for welcome messages that contain ritual text
+            if (message.content.includes("Take a moment to breathe") && 
+                message.content.includes("This is not a place to convince or defend")) {
+                messageElement.classList.add('ritual-entry');
+            }
+            
+            messagesContainer.appendChild(messageElement);
+            scrollToBottom();
+        });
+        
+        // Handle errors
+        socket.on('error', (error) => {
+            console.error('Socket error:', error);
+            alert(`Error: ${error.message}`);
+        });
+        
+        // Send message when button is clicked
+        sendButton.addEventListener('click', sendMessage);
+        
+        // Send message when Enter key is pressed (but allow Shift+Enter for new lines)
+        messageInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        });
+        
+        // Send message function
+        function sendMessage() {
+            const content = messageInput.value.trim();
+            
+            // Don't send empty messages
+            if (!content) return;
+            
+            // Emit the message
+            socket.emit('send_message', { content });
+            
+            // Clear input
+            messageInput.value = '';
+            
+            // Focus back on input
+            messageInput.focus();
+        }
+    </script>
+</body>
+</html>

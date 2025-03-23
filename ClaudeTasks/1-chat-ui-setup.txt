@@ -1,0 +1,54 @@
+
+Claude Task 1 – Chat UI Setup
+Last Updated: 2025-03-23 08:08:20 UTC
+
+---
+
+🌱 Purpose:
+Create the visual and structural foundation for the Emergent Grounds two-person conversation interface.
+
+This is part of the MVE (Minimal Viable Experience), where two anonymous participants will enter a shared space to co-create meaningful, inquiry-based dialogue. The UI must reflect the principles of simplicity, presence, and emotional spaciousness.
+
+---
+
+🔧 Technical Expectations:
+- HTML, CSS, and vanilla JavaScript only (no frameworks).
+- Minimalist styling with soft colors, rounded corners, and poetic whitespace.
+- Semantic and accessible markup.
+
+---
+
+🖼️ UI Requirements:
+
+1. **Full-screen layout** with centered conversation panel.
+2. **Message area**: shows back-and-forth dialogue with poetic names (e.g. “Curious Fox”, “Quiet River”).
+   - Messages from each speaker appear on opposite sides.
+   - AI system messages appear centered or subtly styled differently.
+3. **Input area**:
+   - A single text input field at the bottom.
+   - Submit button with a symbolic label (e.g. “Send” could be “Plant” or “Offer”).
+4. **Poetic placeholder text** in input (e.g. “What wants to be said?”).
+5. Optional but appreciated:
+   - Space for “ritual” or “reflection” prompts to appear from the system.
+
+---
+
+🎨 Design Hints (not strict):
+- Background: light parchment, soft beige, or slightly earthy tone.
+- Message bubbles: subtle gradients, soft shadows, rounded corners.
+- Font: Friendly and calm (e.g. system-ui, serif, or optionally Google Fonts like Quicksand or Nunito).
+
+---
+
+📎 Notes:
+- No login or session storage required yet.
+- This is static markup and styling only — interaction and real-time logic will come later.
+- Use placeholder names for now (e.g. “Reflecting Bear” and “Listening Brook”).
+
+---
+
+🌿 Tone Reminder:
+This space is not transactional. It is meant to be quiet, curious, and spacious. Let the code reflect that. Comment generously and name things poetically if helpful.
+
+Once complete, the next step will be real-time session management.
+

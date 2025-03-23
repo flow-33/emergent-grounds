@@ -1,0 +1,81 @@
+## Emergent Grounds — Session Ritual & Guardian Design
+
+### Purpose
+This document outlines two connected features to deepen the intentionality and emotional safety of Emergent Grounds conversations:
+
+1. **Entry Ritual** – a guided flow that prepares users for meaningful dialogue.
+2. **Guardian AI** – a real-time moderation system that softly intervenes when the space is at risk.
+
+These two work in tandem to frame the conversation as sacred and to protect its integrity.
+
+---
+
+## 1. ENTRY RITUAL (State Machine Before Room Join)
+
+### ✨ Description:
+Before two participants can join a conversation, each must complete a simple sequence that centers them and affirms their intent. Once both are ready, they are ushered into a shared threshold moment before the chat begins.
+
+### 🔄 Flow:
+
+1. **User lands on session entry screen**
+   - Message: “You are about to enter a space for shared presence.”
+
+2. **Guided Ritual Steps (UI screens or modals):**
+   - Step 1: Animated breath cue (e.g. expanding circle)
+   - Step 2: Personal affirmation checkboxes (must confirm all):
+     - [x] I enter this space with openness
+     - [x] I will meet the other with care, not assumptions
+     - [x] I leave behind my urgency. I bring presence
+   - Step 3: Symbolic action (e.g. click to light a virtual candle or water the soil)
+
+3. **Waiting Room (if second user not ready)**
+   - Message: “Waiting for the other to complete their ritual.”
+
+4. **Shared Threshold Moment (when both are ready)**
+   - Soft animation + shared poem (optional)
+   - Message: “Like rivers meeting at the ocean, you now step into shared stillness.”
+   - Continue → Opens chat room
+
+### 🛠 Claude Implementation Notes:
+- Add ritual state machine before joining the Socket.io room.
+- Only allow access when both clients emit `ritual_complete`.
+- UI animations can be minimal for now (fade-in text + button).
+- Use poetic copy. No need for complex timers or user input validation.
+
+---
+
+## 2. GUARDIAN AI (Tone-Aware Moderation System)
+
+### 🛡 Description:
+A lightweight AI moderation layer listens in silently, and gently intervenes if the tone of the conversation drifts into sarcasm, hostility, or over-dominance.
+
+### 🎯 Trigger Rules (start simple):
+- Any message with profanity / flagged sentiment
+- More than 3 messages sent in a row by the same user
+- Sudden use of all-caps, exclamation bursts, or rhetorical questioning
+
+### 🪶 Intervention Tiers:
+
+1. **Soft Nudge (First Warning):**
+   - “Let’s slow the pace. Is what you’re about to say in service of understanding?”
+
+2. **Mirror Prompt (Second Infraction):**
+   - “You’ve shared a lot. What space might we leave for the other to unfold?”
+
+3. **Session Disruption (Final Tier):**
+   - “This space depends on mutual care. Perhaps it’s best to return when ready to listen again.”
+   - Optionally, disable user input until they re-do a shorter reflection step.
+
+### 🛠 Claude Implementation Notes:
+- Use `moderator.checkTone(message)` in AI Moderator class
+- Integrate OpenAI moderation endpoint or use keyword heuristics
+- Store per-user message count + last intervention time (avoid spammy checks)
+- Tie warnings to the entry affirmations: “Remember what you affirmed as you entered.”
+
+---
+
+## ☯️ Design Philosophy
+- **Ritual = Entry Intention**
+- **Guardian = Active Presence**
+- Both should feel calm, poetic, and *never punitive*
+- The aim is to protect the container, not punish the participants

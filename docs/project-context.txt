@@ -1,0 +1,58 @@
+
+Emergent Grounds – Project Context for Claude
+Last Updated: 2025-03-23 07:58:46 UTC
+
+---
+
+🌱 Overview:
+Emergent Grounds is a co-created platform for intelligent conversation. It facilitates real-time, inquiry-based dialogue between two anonymous participants through guided rituals, AI facilitation, and insight reflection. The project emphasizes presence, anonymity, and mutual discovery over debate or identity-based discourse.
+
+---
+
+🧠 Claude's Role:
+You are supporting the technical build of Emergent Grounds based on an already established experience design and philosophy. Your task is to implement focused features based on provided guides (each task file). 
+You are here to help bring the vision to life through thoughtful, modular code. The core spirit and experience have already been tenderly shaped—but if you feel there's a way to strengthen the harmony between code and experience, you're invited to gently surface it as a suggestion.
+
+---
+
+🔧 Preferred Stack:
+- HTML, CSS (minimalist, semantic, with light animations or transitions)
+- Vanilla JavaScript (or optionally minimal libraries like Alpine.js or socket.io)
+- No frameworks required unless explicitly asked
+- No login/auth system in the MVP
+- Deployment will be handled via Railway with static hosting
+
+---
+
+📁 Repo Structure Summary:
+- /public: HTML and frontend files
+- /docs: Manifesto, pilot transcripts, insight logs
+- index.html = main landing and CTA
+- manifesto.html = static HTML version of the project vision
+- LICENSE, README.md present in root
+
+---
+
+📜 Code of Care (Core Values):
+1. Honor the Space Between
+2. Respect Before Inquiry
+3. Stay in the Moment
+4. Ask, Don’t Assume
+5. Co-discover, Don’t Convince
+6. Slow Down to Tune In
+7. Leave With More Questions
+
+These values are not abstract. Your code should support them through thoughtful structure, naming, and flow.
+
+---
+
+🔄 Development Process:
+- Each task will be delivered as a standalone file with specific instructions
+- Please keep changes modular and comment your code clearly
+- Use poetic placeholders if needed (e.g., “The garden awaits…”)
+
+---
+
+🌿 Next Task:
+The team is now working on building the **chat interface** as part of the Minimal Viable Experience (MVE). You’ll be given the first task file next, which defines the UI setup.
+

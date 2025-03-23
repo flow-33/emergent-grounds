@@ -1,0 +1,66 @@
+
+Emergent Grounds – Core Design Decisions
+Last Updated: 2025-03-23 06:54:47 UTC
+
+---
+
+🌱 Core Metaphor: The Garden
+- Conversations take place in a shared "garden" space.
+- Insights are visualized as flowers, growing over time.
+- Participants "plant seeds" during conversations.
+- AI may suggest flowers to "water" after a session (reinforcement of recurring insights).
+
+🌸 Insight Bloom Graph
+- Nodes = insights (quotes, reflections, realizations)
+- Edges = connections based on context, similarity, and participant affirmation
+- Blooms = individual conversations
+- Forest = the ecosystem of accumulated insight over time
+
+🪄 Conversation Modes
+1. Sandbox Mode – full free text, exploratory
+2. Structured Mode – multiple choice options (RPG style)
+3. Guided Expressive Mode – freeform with optional nudges
+4. Interpreted Mode – AI rephrases gently for clarity or tone
+Users can toggle between modes or be guided contextually.
+
+💬 Language Handling
+- Verbatim (raw)
+- Gently cleaned (spelling, grammar, clarity)
+- Interpretive (core idea distilled poetically or diplomatically)
+Users can preview translations or toggled views.
+
+⏳ Sync / Async Mode
+- Sync: Real-time presence (like live chat)
+- Async: Post-and-wait (pen-pal energy)
+
+🌀 Identity & Anonymity
+- No permanent profiles
+- No demographic analytics
+- Identity remembered through ritual or restoration (e.g. answering key MCQ questions)
+- Garden visualization is personal: you see your flowers, not others’.
+
+🌟 Resonance Token System
+- After a session, both participants can privately choose to reconnect in the future.
+- Only matched if both express interest. Contact info remains hidden.
+
+🛡️ Moderation & Safety
+- "Gatekeeping by gardening": Soft reflection nudges over punishment.
+- “Do you feel this reflects the tone you’d like to bring here?”
+- Gradual moderation for repeated trolling.
+
+🧭 Default Experience
+- Narrative onboarding (story/ritual/metaphor)
+- Guided intention-setting
+- Facilitated co-inquiry
+- Reflection moment
+- Garden update
+
+🌿 Self-Growth & Reflection
+- Your own garden blooms with repeated insights.
+- Values and themes emerge over time.
+- Periodic "Insight Recaps" allow participants to track their evolution.
+
+---
+
+Note: These decisions reflect the current co-creation state and are subject to continued emergence.
+
