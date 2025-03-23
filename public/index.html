@@ -3,48 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Emergent Grounds - Tending the space between us—one conversation at a time.">
     <title>Emergent Grounds</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <div>
+    <header class="site-header sticky">
+        <div class="container header-container">
+            <div class="logo">
                 <h1>Emergent Grounds</h1>
-                <p><strong>Tending the space between us—one conversation at a time.</strong></p>
             </div>
-            <nav>
-                <a href="manifesto.html">Full Manifesto</a>
+            <nav class="main-nav" aria-label="Main navigation">
+                <ul class="nav-list">
+                    <li><a href="index.html" class="nav-link active">Home</a></li>
+                    <li><a href="manifesto.html" class="nav-link">Manifesto</a></li>
+                    <li><a href="#about" class="nav-link">About</a></li>
+                </ul>
             </nav>
-        </header>
-
-        <div class="manifesto-preview">
-            <h2>Our Manifesto</h2>
-            <p>We live in a world that moves too fast to feel. Too binary to hold complexity. Too loud to hear what's soft and true.</p>
-            <p>Emergent Grounds is not an app, a script, or a debate. It's a garden space—where insight blooms between us. Where we meet in our unknowing, and walk away changed.</p>
-            <p>This is a framework for inquiry, not argument. For transformation, not transaction. For emergence, not certainty.</p>
-            <a href="manifesto.html" class="read-more">Read the full manifesto →</a>
+            <div class="header-cta">
+                <a href="ritual.html" class="conversation-button">Enter Conversation</a>
+            </div>
         </div>
+    </header>
 
-        <h2>How It Works</h2>
-        <ul>
-            <li>🌱 Ritual entry & intention setting</li>
-            <li>🌀 AI- or human-guided dialogue</li>
-            <li>🌟 Moments of reflection & insight</li>
-            <li>🌾 Closure and integration</li>
-        </ul>
+    <div class="container">
+        <main>
+            <section class="hero">
+                <h2 class="tagline"><strong>Tending the space between us—one conversation at a time.</strong></h2>
+                <p class="hero-text">We live in a world that moves too fast to feel. Too binary to hold complexity. Too loud to hear what's soft and true.</p>
+            </section>
 
-        <h2>From the First Conversation</h2>
-        <div class="quote">
-            "I felt safe enough to share because you held the space with care... That felt like a quiet revolution."
-        </div>
+            <section class="manifesto-preview" aria-labelledby="manifesto-heading">
+                <h2 id="manifesto-heading">Our Manifesto</h2>
+                <div class="manifesto-content">
+                    <p>Emergent Grounds is not an app, a script, or a debate. It's a garden space—where insight blooms between us. Where we meet in our unknowing, and walk away changed.</p>
+                    <p>This is a framework for inquiry, not argument. For transformation, not transaction. For emergence, not certainty.</p>
+                    <a href="manifesto.html" class="read-more">Read the full manifesto →</a>
+                </div>
+            </section>
 
-        <h2>Join the First Circle</h2>
-        <p>If you're someone who longs for deeper conversation, and wants to help shape the Emergent Grounds experience, we invite you to join our first tester circle.</p>
-        <div class="cta-container">
-            <p class="cta">→ Sign-up form coming soon</p>
-            <a href="ritual.html" class="conversation-button">Enter Conversation Space</a>
-        </div>
+            <section class="how-it-works" aria-labelledby="how-it-works-heading" id="about">
+                <h2 id="how-it-works-heading">How It Works</h2>
+                <ul class="process-list">
+                    <li><span class="emoji">🌱</span> Ritual entry & intention setting</li>
+                    <li><span class="emoji">🌀</span> AI- or human-guided dialogue</li>
+                    <li><span class="emoji">🌟</span> Moments of reflection & insight</li>
+                    <li><span class="emoji">🌾</span> Closure and integration</li>
+                </ul>
+            </section>
+
+            <section class="testimonial" aria-labelledby="testimonial-heading">
+                <h2 id="testimonial-heading">From the First Conversation</h2>
+                <blockquote class="quote">
+                    "I felt safe enough to share because you held the space with care... That felt like a quiet revolution."
+                </blockquote>
+            </section>
+
+            <section class="join-section" aria-labelledby="join-heading">
+                <h2 id="join-heading">Join the First Circle</h2>
+                <p>If you're someone who longs for deeper conversation, and wants to help shape the Emergent Grounds experience, we invite you to join our first tester circle.</p>
+                <div class="cta-container">
+                    <p class="cta">→ Sign-up form coming soon</p>
+                    <a href="ritual.html" class="conversation-button">Enter Conversation Space</a>
+                </div>
+            </section>
+        </main>
+
+        <footer class="site-footer">
+            <p>&copy; 2025 Emergent Grounds</p>
+        </footer>
     </div>
 </body>
 </html>
