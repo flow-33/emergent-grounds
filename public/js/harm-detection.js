@@ -20,9 +20,12 @@ window.harmDetection = {
   lastAnalyzedText: '',
   analysisInProgress: false,
   minAnalysisLength: 10, // Only analyze text longer than this
-  debounceDelay: 800,    // Increased debounce delay (ms)
+  debounceDelay: 1000,   // Base debounce delay (ms)
   textCache: new Map(),  // Cache for analyzed text
   maxCacheSize: 50,      // Maximum number of cache entries
+  lastTypingTime: 0,     // Last time user typed
+  lastPunctuationTime: 0, // Last time user typed punctuation
+  typingPaused: false,   // Whether user has paused typing
   
   /**
    * Initialize harm detection with UI elements
@@ -138,6 +141,7 @@ window.harmDetection = {
    */
   handleInput: function(event) {
     const text = event.target.value.trim();
+    const now = Date.now();
     
     // Clear warning if input is empty
     if (!text) {
@@ -174,16 +178,51 @@ window.harmDetection = {
       return;
     }
     
+    // Check for punctuation that might indicate a completed thought
+    const lastChar = text.slice(-1);
+    const punctuationMarks = ['.', '!', '?', ';'];
+    const hasPunctuation = punctuationMarks.includes(lastChar);
+    
+    // Update typing state
+    if (hasPunctuation) {
+      this.lastPunctuationTime = now;
+    }
+    
+    // Calculate adaptive debounce delay based on message length
+    // Longer messages get a longer delay, up to a reasonable maximum
+    const baseDelay = this.debounceDelay;
+    const lengthFactor = Math.min(text.length / 100, 1.5); // Cap at 1.5x for very long messages
+    const adaptiveDelay = Math.round(baseDelay * (1 + lengthFactor));
+    
+    console.log(`[Harm Detection] Adaptive delay: ${adaptiveDelay}ms (base: ${baseDelay}ms, length: ${text.length})`);
+    
+    // Update last typing time
+    this.lastTypingTime = now;
+    this.typingPaused = false;
+    
     // Debounce analysis to avoid too many predictions
-    // Use a longer delay for better performance
     clearTimeout(this.debounceTimeout);
     this.debounceTimeout = setTimeout(() => {
-      // Only analyze if the text is still the same after the debounce
-      if (text === event.target.value.trim()) {
-        this.analyzeText(text);
-        this.lastAnalyzedText = text;
+      const currentTime = Date.now();
+      const timeSinceLastType = currentTime - this.lastTypingTime;
+      const timeSincePunctuation = currentTime - this.lastPunctuationTime;
+      
+      // Check if user has paused typing after punctuation (pause + intention model)
+      const pauseAfterPunctuation = hasPunctuation || 
+                                   (timeSincePunctuation < 2000 && timeSinceLastType > 500);
+      
+      // If user has paused typing for a significant time or after punctuation, analyze
+      if (timeSinceLastType > 500 || pauseAfterPunctuation) {
+        console.log(`[Harm Detection] Analyzing after ${timeSinceLastType}ms pause${pauseAfterPunctuation ? ' following punctuation' : ''}`);
+        
+        // Only analyze if the text is still the same after the debounce
+        if (text === event.target.value.trim()) {
+          this.analyzeText(text);
+          this.lastAnalyzedText = text;
+          this.typingPaused = true;
+        }
       }
-    }, this.debounceDelay);
+    }, adaptiveDelay);
   },
   
   /**
