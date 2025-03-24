@@ -6,8 +6,17 @@
     <meta name="description" content="Emergent Grounds - Tending the space between us—one conversation at a time.">
     <title>Emergent Grounds</title>
     <link rel="stylesheet" href="css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
+    <div class="background-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+    </div>
+
     <header class="site-header sticky">
         <div class="container header-container">
             <div class="logo">
@@ -23,55 +32,179 @@
             <div class="header-cta">
                 <a href="ritual.html" class="conversation-button">Enter Conversation</a>
             </div>
+            <button class="mobile-menu-toggle" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
         </div>
     </header>
 
-    <div class="container">
-        <main>
-            <section class="hero">
-                <h2 class="tagline"><strong>Tending the space between us—one conversation at a time.</strong></h2>
-                <p class="hero-text">We live in a world that moves too fast to feel. Too binary to hold complexity. Too loud to hear what's soft and true.</p>
-            </section>
-
-            <section class="manifesto-preview" aria-labelledby="manifesto-heading">
-                <h2 id="manifesto-heading">Our Manifesto</h2>
-                <div class="manifesto-content">
-                    <p>Emergent Grounds is not an app, a script, or a debate. It's a garden space—where insight blooms between us. Where we meet in our unknowing, and walk away changed.</p>
-                    <p>This is a framework for inquiry, not argument. For transformation, not transaction. For emergence, not certainty.</p>
-                    <a href="manifesto.html" class="read-more">Read the full manifesto →</a>
+    <main>
+        <section class="hero">
+            <div class="container hero-container">
+                <div class="hero-content">
+                    <h2 class="tagline">Tending the space between us—<span class="highlight">one conversation at a time.</span></h2>
+                    <p class="hero-text">We live in a world that moves too fast to feel. Too binary to hold complexity. Too loud to hear what's soft and true.</p>
+                    <div class="hero-cta">
+                        <a href="ritual.html" class="primary-button">Start a Conversation <span class="button-arrow">→</span></a>
+                        <a href="manifesto.html" class="secondary-button">Read Our Manifesto</a>
+                    </div>
                 </div>
-            </section>
-
-            <section class="how-it-works" aria-labelledby="how-it-works-heading" id="about">
-                <h2 id="how-it-works-heading">How It Works</h2>
-                <ul class="process-list">
-                    <li><span class="emoji">🌱</span> Ritual entry & intention setting</li>
-                    <li><span class="emoji">🌀</span> AI- or human-guided dialogue</li>
-                    <li><span class="emoji">🌟</span> Moments of reflection & insight</li>
-                    <li><span class="emoji">🌾</span> Closure and integration</li>
-                </ul>
-            </section>
-
-            <section class="testimonial" aria-labelledby="testimonial-heading">
-                <h2 id="testimonial-heading">From the First Conversation</h2>
-                <blockquote class="quote">
-                    "I felt safe enough to share because you held the space with care... That felt like a quiet revolution."
-                </blockquote>
-            </section>
-
-            <section class="join-section" aria-labelledby="join-heading">
-                <h2 id="join-heading">Join the First Circle</h2>
-                <p>If you're someone who longs for deeper conversation, and wants to help shape the Emergent Grounds experience, we invite you to join our first tester circle.</p>
-                <div class="cta-container">
-                    <p class="cta">→ Sign-up form coming soon</p>
-                    <a href="ritual.html" class="conversation-button">Enter Conversation Space</a>
+                <div class="hero-visual">
+                    <div class="conversation-illustration">
+                        <div class="circle circle-1"></div>
+                        <div class="circle circle-2"></div>
+                        <div class="connection-line"></div>
+                    </div>
                 </div>
-            </section>
-        </main>
+            </div>
+            <div class="scroll-indicator">
+                <span>Scroll</span>
+                <div class="scroll-arrow"></div>
+            </div>
+        </section>
 
-        <footer class="site-footer">
-            <p>&copy; 2025 Emergent Grounds</p>
-        </footer>
-    </div>
+        <section class="about-section" id="about">
+            <div class="container">
+                <div class="section-header reveal-on-scroll">
+                    <h2>What is Emergent Grounds?</h2>
+                </div>
+                <div class="cards-container reveal-on-scroll">
+                    <div class="feature-card">
+                        <div class="card-icon">🌱</div>
+                        <h3>Not an app, a garden</h3>
+                        <p>A space where insight blooms between us. Where we meet in our unknowing, and walk away changed.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="card-icon">🌀</div>
+                        <h3>Not a debate, a dialogue</h3>
+                        <p>A framework for inquiry, not argument. For transformation, not transaction. For emergence, not certainty.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="card-icon">🌟</div>
+                        <h3>Not a product, a practice</h3>
+                        <p>A way to form new neural pathways of dialogue, so we not only talk better—but see each other more fully.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="process-section">
+            <div class="container">
+                <div class="section-header reveal-on-scroll">
+                    <h2>The Conversation Journey</h2>
+                </div>
+                <div class="process-flow reveal-on-scroll">
+                    <div class="process-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h3>Ritual Entry</h3>
+                            <p>Set intentions and prepare for meaningful dialogue</p>
+                        </div>
+                    </div>
+                    <div class="process-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h3>Guided Dialogue</h3>
+                            <p>AI- or human-facilitated conversation</p>
+                        </div>
+                    </div>
+                    <div class="process-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h3>Reflection</h3>
+                            <p>Moments of insight and perspective shift</p>
+                        </div>
+                    </div>
+                    <div class="process-step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h3>Integration</h3>
+                            <p>Closure and carrying forward what emerged</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="testimonial-section">
+            <div class="container">
+                <div class="testimonial-container reveal-on-scroll">
+                    <div class="quote-mark">"</div>
+                    <blockquote class="quote">
+                        I felt safe enough to share because you held the space with care... That felt like a quiet revolution.
+                    </blockquote>
+                    <div class="testimonial-attribution">— From the First Conversation</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="cta-section">
+            <div class="container">
+                <div class="cta-container reveal-on-scroll">
+                    <h2>Ready to experience it?</h2>
+                    <p>If you're someone who longs for deeper conversation, we invite you to join our first circle.</p>
+                    <div class="cta-buttons">
+                        <a href="ritual.html" class="primary-button">Enter Conversation <span class="button-arrow">→</span></a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <h3>Emergent Grounds</h3>
+                    <p>Tending the space between us.</p>
+                </div>
+                <div class="footer-links">
+                    <ul>
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="manifesto.html">Manifesto</a></li>
+                        <li><a href="#about">About</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Emergent Grounds</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile menu toggle
+        const menuToggle = document.querySelector('.mobile-menu-toggle');
+        const mainNav = document.querySelector('.main-nav');
+        
+        if (menuToggle && mainNav) {
+            menuToggle.addEventListener('click', () => {
+                menuToggle.classList.toggle('active');
+                mainNav.classList.toggle('active');
+            });
+        }
+        
+        // Scroll reveal animation
+        const revealElements = document.querySelectorAll('.reveal-on-scroll');
+        
+        const revealOnScroll = () => {
+            const windowHeight = window.innerHeight;
+            
+            revealElements.forEach(element => {
+                const elementTop = element.getBoundingClientRect().top;
+                if (elementTop < windowHeight - 100) {
+                    element.classList.add('revealed');
+                }
+            });
+        };
+        
+        // Initial check on page load
+        window.addEventListener('DOMContentLoaded', revealOnScroll);
+        
+        // Check on scroll
+        window.addEventListener('scroll', revealOnScroll);
+    </script>
 </body>
 </html>
