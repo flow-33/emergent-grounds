@@ -1,0 +1,33 @@
+
+Claude Task Brief: Front-End Enhancements and UX Polishing
+
+Context:
+Emergent Grounds is a two-person, AI-moderated conversational space that promotes radical curiosity and human understanding. You’ve already implemented layered moderation with real-time feedback, rituals to prime the tone, and visual metaphors (like soil health). This task focuses on refining the chat experience, interaction flow, and moderation triggers.
+
+Task Objective:
+Implement the following front-end improvements to increase user clarity, flow, and alignment with the ethos of the space:
+
+1. Message Feedback & Sending UX
+- Add a visual indicator when a message is being sent (e.g., a subtle loader animation near the “Plant” button).
+- Disable the send button while a message is in progress to prevent accidental duplicates.
+- Smooth the message send animation for feedback.
+
+2. "Typing…" Indicator
+- When one participant is typing, show a “X is typing…” indicator on the other participant’s screen.
+- Place it subtly beneath the input box or near the nameplate.
+
+3. Smart Suggestions Box (Conversation Guidance)
+- Display “conversation starters” (existing logic is fine) above the text input box on page load.
+- After the user sends 2–3 messages, gently hide the smart suggestions with a friendly note like:
+  “You're doing beautifully. I'll step back now.”
+- If conversation health drops below 55% (detected by the AI moderator), resurface the smart suggestions dynamically with a line like:
+  “Need a little inspiration? Here’s something to refocus.”
+
+4. Visual Feedback on Conversation State
+- The progress bar (soil health indicator) should:
+  - Start at 50% instead of 100%.
+  - Stay visible, but hide the soil visualization for now (i.e., the brown animated background and plants).
+  - Don’t delete that logic — just make the visual elements display: none; until we’re ready.
+
+Final Notes:
+You already have a debounce model for harm detection (thank you!). No change needed here for this task. We're pausing animation polish on the garden for now — focus instead on participant clarity, flow, and graceful AI tone-setting.

@@ -13,7 +13,7 @@ class ConversationVisualization {
     this.animationFrame = null;
     this.particles = [];
     this.plants = [];
-    this.soilHealth = 1.0; // 0.0 to 1.0, where 1.0 is perfectly healthy
+    this.soilHealth = 0.5; // Start at 50% health (0.0 to 1.0, where 1.0 is perfectly healthy)
     this.soilColor = { r: 101, g: 67, b: 33 }; // Base soil color (brown)
     this.healthyColor = { r: 101, g: 67, b: 33 }; // Healthy soil color
     this.unhealthyColor = { r: 130, g: 60, b: 20 }; // Unhealthy soil color (more reddish)
@@ -24,6 +24,7 @@ class ConversationVisualization {
     this.plantGrowthStage = 0; // 0-5, where 0 is seed and 5 is full plant
     this.isAnimating = false;
     this.rippleEffects = [];
+    this.positiveMessageStreak = 0; // Track consecutive positive messages
   }
 
   /**
@@ -390,18 +391,35 @@ class ConversationVisualization {
   addMessage(message, isPositive = true) {
     this.messageCount++;
     
+    // Skip soil health updates for system messages
+    if (message.type === 'system') {
+      console.log(`[Visualization] System message added, not affecting soil health`);
+      return;
+    }
+    
     // Update positive/negative interaction counts
     if (isPositive) {
       this.positiveInteractions++;
+      this.positiveMessageStreak++;
+      
+      // Gradually increase soil health for positive messages, capped at +0.05 per message
+      let newHealth = this.soilHealth;
+      
+      // Cap at 0.8 until we have at least 6 positive messages
+      const maxHealth = (this.positiveInteractions >= 6) ? 1.0 : 0.8;
+      
+      // Apply a small increase, capped at the maximum allowed health
+      newHealth = Math.min(maxHealth, newHealth + 0.05);
+      
+      this.updateSoilHealth(newHealth);
+      
     } else {
       this.negativeInteractions++;
-    }
-    
-    // Calculate new soil health based on positive/negative ratio
-    const totalInteractions = this.positiveInteractions + this.negativeInteractions;
-    if (totalInteractions > 0) {
-      const newHealth = Math.max(0.1, Math.min(1.0, this.positiveInteractions / totalInteractions));
-      this.updateSoilHealth(newHealth);
+      this.positiveMessageStreak = 0;
+      
+      // Decrease health slightly for negative messages
+      const healthReduction = 0.03; // Small decrease for negative messages
+      this.updateSoilHealth(Math.max(0.1, this.soilHealth - healthReduction));
     }
     
     // Add a ripple effect
@@ -430,7 +448,7 @@ class ConversationVisualization {
     // Reinitialize plants
     this.initializePlants();
     
-    console.log(`[Visualization] Message added (${isPositive ? 'positive' : 'negative'}), total: ${this.messageCount}`);
+    console.log(`[Visualization] Message added (${isPositive ? 'positive' : 'negative'}), total: ${this.messageCount}, health: ${this.soilHealth.toFixed(2)}`);
   }
 
   /**

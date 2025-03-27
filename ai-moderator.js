@@ -86,6 +86,13 @@ function generateCacheKey(messages) {
   return relevantMessages.map(msg => `${msg.name || 'system'}:${msg.content.substring(0, 50)}`).join('|');
 }
 
+// Welcome messages for the AI facilitator
+const WELCOME_MESSAGES = [
+  "Welcome. I'll be here quietly in the background to help guide the space if needed. Let's see what you both discover.",
+  "Welcome, both of you. I'm here to gently support this shared space. Let's begin with curiosity and care.",
+  "Welcome to this conversation. I'm here to support your dialogue when needed. Feel free to explore together."
+];
+
 class AIModerator {
   constructor() {
     this.conversationHistory = new Map(); // roomId -> message history
@@ -99,6 +106,8 @@ class AIModerator {
     this.moderationTones = new Map(); // roomId -> Map of userId -> current tone (reflective, grounded, directive)
     this.distressSignals = new Map(); // roomId -> Map of userId -> boolean (whether user has shown distress)
     this.urgencyOverrides = new Map(); // roomId -> Map of userId -> timestamp of last urgency override
+    this.welcomeMessageSent = new Map(); // roomId -> boolean (whether welcome message has been sent)
+    this.uniqueParticipants = new Map(); // roomId -> Set of unique participant IDs who have sent messages
     this.cacheHits = 0;
     this.cacheMisses = 0;
     
@@ -219,6 +228,8 @@ class AIModerator {
       this.totalMessages.set(roomId, 0);
       this.userDisruptionScores.set(roomId, new Map());
       this.userMessageHistory.set(roomId, new Map());
+      this.welcomeMessageSent.set(roomId, false);
+      this.uniqueParticipants.set(roomId, new Set());
       console.log(`[AI Moderator] Initialized new conversation history for room ${roomId}`);
     }
     
@@ -232,6 +243,9 @@ class AIModerator {
     
     // Track user message history for context analysis
     if (message.type !== 'system') {
+      // Add this participant to the unique participants set
+      this.uniqueParticipants.get(roomId).add(message.sender);
+      
       if (!this.userMessageHistory.get(roomId).has(message.sender)) {
         this.userMessageHistory.get(roomId).set(message.sender, []);
       }
@@ -242,6 +256,22 @@ class AIModerator {
       // Keep only the last 10 messages per user to avoid memory issues
       if (userHistory.length > 10) {
         userHistory.shift();
+      }
+      
+      // Check if we should send a welcome message (after both users have sent at least one message)
+      const uniqueParticipantCount = this.uniqueParticipants.get(roomId).size;
+      if (uniqueParticipantCount >= 2 && !this.welcomeMessageSent.get(roomId)) {
+        console.log(`[AI Moderator] Both participants have sent messages, sending welcome message`);
+        this.welcomeMessageSent.set(roomId, true);
+        
+        // Get a random welcome message
+        const welcomeIndex = Math.floor(Math.random() * WELCOME_MESSAGES.length);
+        const welcomeMessage = {
+          type: 'system',
+          content: WELCOME_MESSAGES[welcomeIndex]
+        };
+        
+        return welcomeMessage;
       }
     }
     
@@ -318,20 +348,195 @@ class AIModerator {
   /**
    * Get conversation starters if they should be shown
    * @param {string} roomId - The room identifier
-   * @returns {string[]|null} Array of conversation starters or null if they shouldn't be shown
+   * @param {number} conversationHealth - Optional health parameter
+   * @param {Array} context - Optional array of recent messages for context
+   * @returns {Promise<Object>|Object|null} Array of conversation starters, null, or object with resurfaced starters
    */
-  getConversationStarters(roomId) {
+  getConversationStarters(roomId, conversationHealth, context) {
     if (!this.conversationStarters.has(roomId)) {
       this.conversationStarters.set(roomId, true);
     }
     
+    // If conversation health is provided and below 0.55 (55%), show smart suggestions
+    if (conversationHealth !== undefined && conversationHealth < 0.55) {
+      console.log(`[AI Moderator] Resurfacing conversation starters due to low health score: ${conversationHealth}`);
+      
+      // If we have context and OpenAI is available, generate smart suggestions
+      if (context && openai && useOpenAI) {
+        console.log(`[AI Moderator] Generating smart suggestions based on conversation context`);
+        return this._generateSmartSuggestions(context)
+          .then(suggestions => {
+            return {
+              starters: suggestions,
+              resurfaced: true,
+              message: "Need a little inspiration? Here's something to refocus."
+            };
+          })
+          .catch(error => {
+            console.error('Error generating smart suggestions:', error);
+            // Fall back to random starters if AI fails
+            const shuffled = [...CONVERSATION_STARTERS].sort(() => 0.5 - Math.random());
+            return {
+              starters: shuffled.slice(0, 3),
+              resurfaced: true,
+              message: "Need a little inspiration? Here's something to refocus."
+            };
+          });
+      } else {
+        // Get 3 random starters with a special message if no context or OpenAI not available
+        const shuffled = [...CONVERSATION_STARTERS].sort(() => 0.5 - Math.random());
+        const starters = shuffled.slice(0, 3);
+        // Add a special property to indicate these are resurfaced starters
+        return {
+          starters: starters,
+          resurfaced: true,
+          message: "Need a little inspiration? Here's something to refocus."
+        };
+      }
+    }
+    
     if (this.conversationStarters.get(roomId)) {
-      // Get 3 random starters
-      const shuffled = [...CONVERSATION_STARTERS].sort(() => 0.5 - Math.random());
-      return shuffled.slice(0, 3);
+      // Store unique starters for each participant in the room
+      if (!this.roomStarters) {
+        this.roomStarters = new Map();
+      }
+      
+      if (!this.starterCallCount) {
+        this.starterCallCount = new Map();
+      }
+      
+      if (!this.starterCallCount.has(roomId)) {
+        this.starterCallCount.set(roomId, 0);
+      }
+      
+      // Track how many times this function has been called for this room
+      const callCount = this.starterCallCount.get(roomId);
+      this.starterCallCount.set(roomId, callCount + 1);
+      
+      // Generate different starters for each participant
+      if (!this.roomStarters.has(roomId)) {
+        // Shuffle the starters
+        const shuffled = [...CONVERSATION_STARTERS].sort(() => 0.5 - Math.random());
+        
+        // First participant gets first 3 starters, second participant gets next 3
+        this.roomStarters.set(roomId, {
+          first: shuffled.slice(0, 3),
+          second: shuffled.slice(3, 6)
+        });
+      }
+      
+      // Return different starters based on call count (even/odd)
+      const roomData = this.roomStarters.get(roomId);
+      return callCount % 2 === 0 ? roomData.first : roomData.second;
     }
     
     return null;
+  }
+  
+  /**
+   * Generate smart suggestions based on conversation context using OpenAI
+   * @param {Array} context - Array of recent messages for context
+   * @returns {Promise<string[]>} Array of smart suggestions
+   * @private
+   */
+  async _generateSmartSuggestions(context) {
+    console.log(`[AI Moderator] Generating smart suggestions with OpenAI`);
+    
+    if (!openai) {
+      console.error('[AI Moderator] OpenAI client not initialized');
+      throw new Error('OpenAI client not initialized');
+    }
+    
+    // Format conversation context for the AI
+    const formattedContext = context.map(msg => {
+      return {
+        role: msg.type === 'system' ? 'system' : 'user',
+        content: msg.content,
+        name: msg.participant // Use participant identifier as name
+      };
+    });
+    
+    // Add system prompt to guide the AI
+    const systemPrompt = {
+      role: 'system',
+      content: `You are an AI assistant helping to generate relevant, constructive suggestions for what a user might say next in a conversation. 
+      
+      Based on the conversation context provided, generate 2 short, thoughtful suggestions (under 20 words each) that:
+      1. Are relevant to the conversation topic
+      2. Are polite and constructive
+      3. Help deepen the conversation or explore new angles
+      4. Encourage meaningful exchange
+      5. Are phrased as complete thoughts the user could say
+      
+      Return ONLY the 2 suggestions as a JSON array of strings, with no additional text, explanation or formatting.
+      Example response format: ["I'm curious about your perspective on...", "That reminds me of a time when..."]`
+    };
+    
+    // Get model from environment variables or use default
+    const model = process.env.OPENAI_MODEL || 'gpt-3.5-turbo';
+    console.log(`[AI Moderator] Using model: ${model} for smart suggestions`);
+    
+    try {
+      // Generate completion
+      const response = await openai.chat.completions.create({
+        model: model,
+        messages: [systemPrompt, ...formattedContext],
+        max_tokens: 150,
+        temperature: 0.7,
+        response_format: { type: "json_object" }
+      });
+      
+      // Log token usage
+      console.log(`[AI Moderator] Token usage - Prompt: ${response.usage.prompt_tokens}, Completion: ${response.usage.completion_tokens}, Total: ${response.usage.total_tokens}`);
+      
+      // Parse the JSON response
+      const content = response.choices[0].message.content.trim();
+      let suggestions;
+      
+      try {
+        const parsedResponse = JSON.parse(content);
+        suggestions = Array.isArray(parsedResponse) ? parsedResponse : parsedResponse.suggestions || [];
+      } catch (error) {
+        console.error('[AI Moderator] Error parsing JSON response:', error);
+        console.log('[AI Moderator] Raw response:', content);
+        
+        // Try to extract suggestions using regex as fallback
+        const matches = content.match(/"([^"]+)"/g);
+        if (matches && matches.length >= 2) {
+          suggestions = matches.slice(0, 2).map(m => m.replace(/"/g, ''));
+        } else {
+          // Last resort fallback
+          suggestions = [
+            "I'm curious to hear more about your perspective.",
+            "That's an interesting point. Could you elaborate?"
+          ];
+        }
+      }
+      
+      // Ensure we have exactly 2 suggestions and they're not too long
+      suggestions = suggestions.slice(0, 2).map(s => {
+        // Truncate to 20 words if needed
+        const words = s.split(' ');
+        if (words.length > 20) {
+          return words.slice(0, 20).join(' ') + '...';
+        }
+        return s;
+      });
+      
+      // If we somehow don't have 2 suggestions, add generic ones
+      while (suggestions.length < 2) {
+        suggestions.push(
+          "I appreciate your thoughts. What else comes to mind?",
+          "That's interesting. How did you come to that perspective?"
+        );
+      }
+      
+      console.log(`[AI Moderator] Generated smart suggestions:`, suggestions);
+      return suggestions;
+    } catch (error) {
+      console.error('[AI Moderator] Error generating smart suggestions:', error);
+      throw error;
+    }
   }
   
   /**

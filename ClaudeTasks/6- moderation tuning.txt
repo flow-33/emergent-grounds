@@ -1,0 +1,55 @@
+Project Context:
+This is for Emergent Grounds, a web-based two-person dialogue platform where an AI moderator supports inquiry-driven, respectful, insight-generating conversations. The tone is gentle, adaptive, and humanistic. The platform is already live at emergentgrounds.org and has implemented reflection intervals, a disruption score, and rituals at entry. We now want to deepen the nuance and responsiveness of the AI facilitator.
+
+Objective:
+Enhance the AI moderator’s presence and logic by adding a smarter reflection engine, dynamic tone adjustment, and a gentle onboarding message. We also want to add a visual typing indicator for better UX.
+
+Key Changes to Implement:
+
+1. ✨ Welcome Message at Conversation Start
+- When both participants have entered and sent at least one message, have the AI moderator send:
+  > "Welcome, both of you. I’m here to gently support this shared space. Let’s begin with curiosity and care."
+- Only do this once per session.
+- Trigger this after both participants have messaged and before reflections begin.
+
+2. 🌡️ Replace Reflection Timer with Health-Based Logic
+- Remove or override random message-based reflection timer (every 4–6).
+- Instead, every 3 messages per participant, run a **Conversation Health Check**:
+    - Analyze tone for emotional polarity swings (e.g. confusion → anger)
+    - Check message dominance ratio
+    - Look for principle violations (see below)
+    - If overall "health score" dips below 0.7 (on 0–1 scale), trigger reflection.
+    - If score is > 0.85, skip reflection and continue in silent mode.
+
+3. 📜 Principle Checkpoints
+Run semantic checks against these principles:
+- “Ask, Don’t Assume”: Flag judgmental statements (e.g., "you are just..." or "people like you...").
+- “Honor the Space Between”: Trigger if one user ignores or dismisses another repeatedly.
+- “Respect Before Inquiry”: Trigger if tone is aggressive, dismissive, or invalidating identity.
+- If any flag is triggered, increase disruptionScore slightly and favor **clarity-focused**, not poetic, reflections (see #4).
+
+4. 🗣️ Tone-Adaptive Reflections
+- If disruptionScore < 2: use poetic inquiry tone.
+- If disruptionScore >= 2: shift to grounded tone with specific examples (mentor-like, not vague).
+Example:
+  > Instead of "How might you listen deeper?" use:  
+  > "It sounds like one of you is feeling unseen. Would it help to pause and ask, 'What do you need right now?'"
+
+5. 🔁 Typing Indicator ("[X] is typing…")
+- Implement a small UI indicator that shows when each participant is typing.
+- Suggested UI:
+  - Show “🌿 Soaring Hawk is typing...” or “🌱 Listening Deer is typing…” at the bottom of the message thread.
+  - Style it subtly to not disrupt the visual serenity of the experience.
+- Use `socket.io` to emit typing events:
+    - On keypress (with debounce ~250ms), emit `userTyping`
+    - Stop after 1 second of no typing
+
+6. ✅ Optional Extras (if time allows)
+- Log reflection trigger reasons (e.g. “Tone spike: frustration + assumption”)
+- Store reflection type used (poetic / grounded) for later insight tracking
+
+Clarifications:
+- We're using GPT 3.5-turbo for now (not 4), so keep prompts concise and efficient.
+- We’ll handle visual metaphor refinements (soil bloom/growth) in a separate task.
+
+Let me know if you’d like additional JSON input/output structure, or specific integration help.

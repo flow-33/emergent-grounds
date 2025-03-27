@@ -34,14 +34,6 @@
             <p>Take a moment to breathe and set an intention for this conversation.</p>
         </div>
         
-        <!-- Conversation starters area -->
-        <div class="conversation-starters" id="conversation-starters" style="display: none;">
-            <p class="starters-heading">Conversation Starters:</p>
-            <div class="starters-container" id="starters-container">
-                <!-- Starters will be dynamically inserted here -->
-            </div>
-        </div>
-
         <!-- Conversation visualization area -->
         <div class="visualization-container">
             <canvas id="conversation-visualization" class="conversation-canvas"></canvas>
@@ -52,12 +44,21 @@
             <!-- Messages will be dynamically inserted here -->
         </div>
 
+        <!-- Conversation starters area - positioned above the input box -->
+        <div class="conversation-starters" id="conversation-starters" style="display: none;">
+            <p class="starters-heading">Conversation Starters:</p>
+            <div class="starters-container" id="starters-container">
+                <!-- Starters will be dynamically inserted here -->
+            </div>
+        </div>
+        
         <!-- Input area -->
         <div class="input-container">
             <textarea id="message-input" class="message-input" placeholder="What wants to be said?"></textarea>
             <div id="tone-warning" class="tone-warning hidden"></div>
             <button id="send-button" class="send-button">Plant</button>
             <div id="cooldown-message" class="cooldown-message" style="display: none;"></div>
+            <div id="typing-indicator" class="typing-indicator" style="display: none;"></div>
         </div>
     </div>
 
@@ -75,10 +76,16 @@
         const startersContainer = document.getElementById('starters-container');
         const cooldownMessage = document.getElementById('cooldown-message');
         const toneWarning = document.getElementById('tone-warning');
+        const typingIndicator = document.getElementById('typing-indicator');
         
         // Cooldown state
         let isInCooldown = false;
         let cooldownTimer = null;
+        
+        // Typing state
+        let isTyping = false;
+        let typingTimeout = null;
+        let messageCount = 0;
         
         // Participant data
         let participantData = {
@@ -86,7 +93,7 @@
             name: null
         };
         
-        // Initialize harm detection and visualization
+        // Initialize harm detection, visualization, and typing events
         window.addEventListener('DOMContentLoaded', () => {
             // Initialize harm detection with UI elements
             window.harmDetection.initialize({
@@ -110,9 +117,51 @@
             const visualizationCanvas = document.getElementById('conversation-visualization');
             if (visualizationCanvas && window.conversationVisualization) {
                 window.conversationVisualization.initialize(visualizationCanvas);
+                // Start soil health at 50% instead of 100%
+                window.conversationVisualization.updateSoilHealth(0.5);
                 console.log('[Visualization] Initialized conversation visualization');
+                
+                // Hide soil visualization elements but keep progress bar
+                const canvas = document.getElementById('conversation-visualization');
+                const ctx = canvas.getContext('2d');
+                const originalDraw = window.conversationVisualization.draw;
+                
+                window.conversationVisualization.draw = function() {
+                    // Clear canvas
+                    ctx.clearRect(0, 0, this.width, this.height);
+                    
+                    // Only draw the health indicator, not the soil or plants
+                    this.drawHealthIndicator();
+                };
             }
+            
+            // Setup typing indicator events
+            messageInput.addEventListener('input', handleTypingEvent);
+            messageInput.addEventListener('keydown', handleTypingEvent);
         });
+        
+        // Handle typing events
+        function handleTypingEvent() {
+            if (!isTyping && messageInput.value.trim().length > 0) {
+                isTyping = true;
+                // Emit typing event to server
+                socket.emit('typing_start');
+            }
+            
+            // Clear existing timeout
+            if (typingTimeout) {
+                clearTimeout(typingTimeout);
+            }
+            
+            // Set new timeout to stop typing indicator after 2 seconds of inactivity
+            typingTimeout = setTimeout(() => {
+                if (isTyping) {
+                    isTyping = false;
+                    // Emit stop typing event to server
+                    socket.emit('typing_stop');
+                }
+            }, 2000);
+        }
         
         // Helper function to scroll to bottom of messages
         function scrollToBottom() {
@@ -272,11 +321,78 @@
             }
         });
         
+        // Handle typing indicator from other participant
+        socket.on('typing', (data) => {
+            if (data.sender !== socket.id) {
+                typingIndicator.textContent = `${data.name} is typing...`;
+                typingIndicator.style.display = 'block';
+            }
+        });
+        
+        // Handle typing stop from other participant
+        socket.on('typing_stop', (data) => {
+            if (data.sender !== socket.id) {
+                typingIndicator.style.display = 'none';
+            }
+        });
+        
+        // Handle conversation starters (including resurfaced starters)
+        socket.on('conversation_starters', (data) => {
+            console.log('Received conversation starters:', data);
+            
+            // Check if these are resurfaced starters
+            if (data.resurfaced) {
+                // Show special message for resurfaced starters
+                conversationStarters.innerHTML = `<p class="starters-heading">${data.message}</p>`;
+                
+                // Add starters to container
+                const startersDiv = document.createElement('div');
+                startersDiv.className = 'starters-container';
+                
+                data.starters.forEach(starter => {
+                    const starterButton = document.createElement('button');
+                    starterButton.className = 'starter-button';
+                    starterButton.textContent = starter;
+                    
+                    // When clicked, insert the starter text into the input field
+                    starterButton.addEventListener('click', () => {
+                        messageInput.value = starter;
+                        messageInput.focus();
+                    });
+                    
+                    startersDiv.appendChild(starterButton);
+                });
+                
+                conversationStarters.appendChild(startersDiv);
+                
+                // Add resurfaced class to indicate these are resurfaced starters
+                conversationStarters.classList.add('resurfaced');
+                
+                // Show the starters container with a fade-in animation
+                conversationStarters.style.display = 'block';
+                conversationStarters.style.opacity = '0';
+                setTimeout(() => {
+                    conversationStarters.style.opacity = '1';
+                }, 10);
+            } else if (data.starters) {
+                // Regular starters
+                displayConversationStarters(data.starters);
+            }
+        });
+        
         // Handle new messages
         socket.on('new_message', (message) => {
+            // Hide typing indicator when message is received
+            if (message.sender !== socket.id) {
+                typingIndicator.style.display = 'none';
+            }
+            
             const messageElement = createMessageElement(message);
             messagesContainer.appendChild(messageElement);
             scrollToBottom();
+            
+            // Increment message count
+            messageCount++;
             
             // Update visualization with new message
             if (window.conversationVisualization) {
@@ -287,6 +403,44 @@
                                   message.content.length > 10;
                 
                 window.conversationVisualization.addMessage(message, isPositive);
+                
+                // Check conversation health and resurface starters if needed
+                const currentHealth = window.conversationVisualization.soilHealth;
+                console.log(`Current conversation health: ${currentHealth}`);
+                
+                // If health drops below 55% and we've already hidden starters, resurface them
+                if (currentHealth < 0.55 && messageCount >= 3 && conversationStarters.style.display === 'none') {
+                    console.log('Conversation health below 55%, resurfacing starters');
+                    
+                    // Get smart suggestions based on conversation context
+                    // Pass the last 10 messages for context and the current health score
+                    const lastMessages = Array.from(messagesContainer.querySelectorAll('.message'))
+                        .slice(-10)
+                        .map(el => {
+                            const content = el.querySelector('.message-content')?.textContent || el.textContent;
+                            const isSystem = el.classList.contains('system-message');
+                            const participantClass = el.classList.contains('participant-1') ? 'participant-1' : 'participant-2';
+                            return {
+                                content: content,
+                                type: isSystem ? 'system' : 'participant',
+                                participant: isSystem ? 'system' : participantClass
+                            };
+                        });
+                    
+                    socket.emit('get_conversation_starters', { 
+                        health: currentHealth,
+                        context: lastMessages
+                    });
+                }
+            }
+            
+            // Check if we should hide conversation starters after 2-3 messages
+            if (messageCount >= 2 && conversationStarters.style.display !== 'none' && 
+                !conversationStarters.classList.contains('resurfaced')) {
+                conversationStarters.innerHTML = '<p class="starters-heading">You\'re doing beautifully. I\'ll step back now.</p>';
+                setTimeout(() => {
+                    conversationStarters.style.display = 'none';
+                }, 3000);
             }
         });
         
@@ -428,6 +582,19 @@
             // Don't send if in cooldown
             if (isInCooldown) return;
             
+            // Disable send button and show loading indicator
+            sendButton.disabled = true;
+            sendButton.innerHTML = '<div class="send-loader"></div>';
+            
+            // Stop typing indicator
+            if (isTyping) {
+                isTyping = false;
+                socket.emit('typing_stop');
+                if (typingTimeout) {
+                    clearTimeout(typingTimeout);
+                }
+            }
+            
             // Check for harmful content before sending
             if (window.harmDetection && window.harmDetection.checkBeforeSend) {
                 try {
@@ -442,6 +609,9 @@
                         
                         // Add a confirmation dialog
                         if (!confirm('This message may come across as harmful. Send anyway?')) {
+                            // Re-enable send button and restore text
+                            sendButton.disabled = false;
+                            sendButton.textContent = 'Plant';
                             return; // User chose not to send
                         }
                     }
@@ -460,13 +630,12 @@
             // Clear any warnings
             toneWarning.classList.add('hidden');
             
+            // Re-enable send button and restore text
+            sendButton.disabled = false;
+            sendButton.textContent = 'Plant';
+            
             // Focus back on input
             messageInput.focus();
-            
-            // Hide conversation starters after first message
-            if (conversationStarters.style.display !== 'none') {
-                conversationStarters.style.display = 'none';
-            }
         }
     </script>
 </body>

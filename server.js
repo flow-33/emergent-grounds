@@ -173,7 +173,78 @@ io.on('connection', (socket) => {
   socket.on('join', () => {
     socket.emit('error', { message: 'Please complete the entry ritual first' });
   });
+  
+  // Handle request for conversation starters (including health-based resurfacing)
+  socket.on('get_conversation_starters', async (data) => {
+    try {
+      if (!participantData) {
+        socket.emit('error', { message: 'You must join a room first' });
+        return;
+      }
+      
+      const { roomId } = participantData;
+      const conversationHealth = data.health; // Optional health parameter
+      const context = data.context; // Optional conversation context for smart suggestions
+      
+      // Get conversation starters from AI moderator
+      const starters = await aiModerator.getConversationStarters(roomId, conversationHealth, context);
+      
+      // If starters is an object with resurfaced property, it's a special case
+      if (starters && starters.resurfaced) {
+        console.log(`[Server] Resurfacing conversation starters due to low health: ${conversationHealth}`);
+        
+        // Send special resurfaced starters
+        socket.emit('conversation_starters', {
+          starters: starters.starters,
+          resurfaced: true,
+          message: starters.message
+        });
+      } else if (starters) {
+        // Send regular starters
+        socket.emit('conversation_starters', { starters });
+      }
+      
+    } catch (error) {
+      console.error('Error in get_conversation_starters handler:', error);
+      socket.emit('error', { message: 'Failed to get conversation starters' });
+    }
+  });
 
+  // Handle typing indicator start
+  socket.on('typing_start', () => {
+    try {
+      if (!participantData) return;
+      
+      const { roomId, name } = participantData;
+      
+      // Broadcast typing indicator to the room (except sender)
+      socket.to(roomId).emit('typing', {
+        sender: socket.id,
+        name
+      });
+      
+    } catch (error) {
+      console.error('Error in typing_start handler:', error);
+    }
+  });
+  
+  // Handle typing indicator stop
+  socket.on('typing_stop', () => {
+    try {
+      if (!participantData) return;
+      
+      const { roomId } = participantData;
+      
+      // Broadcast typing stop to the room (except sender)
+      socket.to(roomId).emit('typing_stop', {
+        sender: socket.id
+      });
+      
+    } catch (error) {
+      console.error('Error in typing_stop handler:', error);
+    }
+  });
+  
   // Handle chat messages
   socket.on('send_message', async (messageData) => {
     try {

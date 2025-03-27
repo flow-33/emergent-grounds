@@ -884,8 +884,23 @@ li {
 /* Conversation Starters */
 .conversation-starters {
     background-color: rgba(43, 76, 63, 0.05);
-    padding: 1rem;
-    border-bottom: 1px solid rgba(43, 76, 63, 0.1);
+    padding: 0.8rem;
+    border-radius: 8px;
+    margin-bottom: 0.8rem;
+    transition: opacity 0.3s ease-in-out;
+    width: 100%;
+}
+
+/* Resurfaced conversation starters */
+.conversation-starters.resurfaced {
+    background-color: rgba(43, 76, 63, 0.1);
+    border-left: 3px solid rgba(43, 76, 63, 0.3);
+    animation: pulse-highlight 2s ease-in-out;
+}
+
+@keyframes pulse-highlight {
+    0%, 100% { background-color: rgba(43, 76, 63, 0.1); }
+    50% { background-color: rgba(43, 76, 63, 0.2); }
 }
 
 .starters-heading {
@@ -1270,6 +1285,33 @@ li {
     opacity: 0;
     transform: translateY(10px);
     pointer-events: none;
+}
+
+/* Typing indicator */
+.typing-indicator {
+    position: absolute;
+    bottom: calc(100% + 5px);
+    left: 1rem;
+    background-color: rgba(255, 255, 255, 0.9);
+    color: var(--primary-color);
+    padding: 0.4rem 0.8rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-style: italic;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    animation: fadeIn 0.3s ease-in-out;
+    z-index: 5;
+}
+
+/* Send button loader */
+.send-loader {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto;
 }
 
 /* Breathing circle animation */
