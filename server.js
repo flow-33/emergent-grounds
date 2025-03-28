@@ -15,6 +15,44 @@ const { Server } = require('socket.io');
 const sessionStore = require('./session-store');
 const aiModerator = require('./ai-moderator');
 
+// Messages for when a user joins the conversation
+const FIRST_USER_MESSAGES = [
+  "Welcome, {username}! You're the first one here. Waiting for another groundkeeper to join...",
+  "You've created a new space as {username}. Waiting for someone else to join the conversation...",
+  "This space is ready for connection. You've joined as {username}. Waiting for another participant to join you..."
+];
+
+const SECOND_USER_MESSAGES = [
+  "You joined as {username}. {otherUsername} is already in the room. Say hello to them!",
+  "Welcome, {username}! {otherUsername} has been waiting for someone to join. Feel free to say hello.",
+  "You've entered as {username}. {otherUsername} is already here. Why not introduce yourself?"
+];
+
+// Function to get a personalized welcome message
+function getWelcomeMessage(roomId, username) {
+  const participants = sessionStore.getRoomParticipants(roomId);
+  
+  // If this is the first participant
+  if (participants.length === 1) {
+    const randomIndex = Math.floor(Math.random() * FIRST_USER_MESSAGES.length);
+    return FIRST_USER_MESSAGES[randomIndex].replace('{username}', username);
+  } 
+  // If this is the second participant
+  else if (participants.length === 2) {
+    // Get the other participant's name
+    const otherParticipant = participants.find(p => p.name !== username);
+    if (otherParticipant) {
+      const randomIndex = Math.floor(Math.random() * SECOND_USER_MESSAGES.length);
+      return SECOND_USER_MESSAGES[randomIndex]
+        .replace('{username}', username)
+        .replace('{otherUsername}', otherParticipant.name);
+    }
+  }
+  
+  // Fallback to generic message
+  return `${username} has joined the conversation.`;
+}
+
 // Initialize Express app and HTTP server
 const app = express();
 const server = http.createServer(app);
@@ -87,12 +125,13 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Handle participant joining with completed ritual
-  socket.on('join_with_ritual', async (data) => {
-    try {
-      const { roomId, name } = data;
-      
-      console.log(`Participant ${name} (${socket.id}) attempting to join room ${roomId} after ritual`);
+      // Handle participant joining with completed ritual
+      socket.on('join_with_ritual', async (data) => {
+        try {
+          const { roomId, name, experienceLevel, suggestionThreshold } = data;
+          
+          console.log(`Participant ${name} (${socket.id}) attempting to join room ${roomId} after ritual`);
+          console.log(`Experience level: ${experienceLevel}, Suggestion threshold: ${suggestionThreshold}`);
       
       // Validate the room exists
       const room = sessionStore.getRoom(roomId);
@@ -117,7 +156,12 @@ io.on('connection', (socket) => {
       }
       
       // Store participant data locally
-      participantData = { roomId, name };
+      participantData = { 
+        roomId, 
+        name,
+        experienceLevel,
+        suggestionThreshold
+      };
       
       console.log(`Participant ${name} (${socket.id}) joined room ${roomId} after ritual`);
       console.log(`Room participants:`, [...room.participants].map(id => {
@@ -126,21 +170,44 @@ io.on('connection', (socket) => {
       }));
       
       // Get conversation starters if this is a new conversation
-      const conversationStarters = aiModerator.getConversationStarters(roomId);
+      const userId = socket.id;
       
-      // Send welcome message to the participant
-      socket.emit('joined', {
-        roomId,
-        name,
-        isNewRoom: false,
-        conversationStarters: conversationStarters
-      });
+      try {
+        // Handle the case where getConversationStarters might return a Promise
+        const conversationStarters = await Promise.resolve(aiModerator.getConversationStarters(roomId, userId, undefined, undefined, suggestionThreshold));
+        
+        console.log(`[Server] Got conversation starters for user ${userId}:`, conversationStarters ? 'yes' : 'no');
+        
+        // Send welcome message to the participant
+        socket.emit('joined', {
+          roomId,
+          name,
+          isNewRoom: false,
+          conversationStarters: conversationStarters,
+          experienceLevel: experienceLevel,
+          suggestionThreshold: suggestionThreshold
+        });
+      } catch (error) {
+        console.error('Error getting conversation starters:', error);
+        
+        // Send welcome message without starters if there was an error
+        socket.emit('joined', {
+          roomId,
+          name,
+          isNewRoom: false,
+          experienceLevel: experienceLevel,
+          suggestionThreshold: suggestionThreshold
+        });
+      }
       
-      // Notify room of the new participant
-      io.to(roomId).emit('system_message', {
-        type: 'system',
-        content: `${name} has joined the conversation.`
-      });
+    // Generate personalized welcome message
+    const welcomeMessage = getWelcomeMessage(roomId, name);
+    
+    // Notify room of the new participant with personalized message
+    io.to(roomId).emit('system_message', {
+      type: 'system',
+      content: welcomeMessage
+    });
       
       // Get message history and filter out any "left the conversation" messages for this participant
       let messages = sessionStore.getMessages(roomId);
@@ -183,25 +250,34 @@ io.on('connection', (socket) => {
       }
       
       const { roomId } = participantData;
+      const userId = socket.id; // Use socket ID as user identifier
       const conversationHealth = data.health; // Optional health parameter
       const context = data.context; // Optional conversation context for smart suggestions
       
-      // Get conversation starters from AI moderator
-      const starters = await aiModerator.getConversationStarters(roomId, conversationHealth, context);
+      // Get the user's threshold from the request or from participantData
+      const userThreshold = data.suggestionThreshold || participantData.suggestionThreshold;
+      console.log(`[Server] User ${userId} has threshold ${userThreshold} (from ${data.suggestionThreshold ? 'request' : 'participantData'})`);
+      
+      // Get conversation starters from AI moderator using the user's specific threshold
+      const starters = await aiModerator.getConversationStarters(roomId, userId, conversationHealth, context, userThreshold);
       
       // If starters is an object with resurfaced property, it's a special case
       if (starters && starters.resurfaced) {
-        console.log(`[Server] Resurfacing conversation starters due to low health: ${conversationHealth}`);
+        console.log(`[Server] Resurfacing conversation starters for user ${userId} due to low health: ${conversationHealth}`);
         
         // Send special resurfaced starters
         socket.emit('conversation_starters', {
           starters: starters.starters,
           resurfaced: true,
-          message: starters.message
+          message: starters.message,
+          userId: userId
         });
       } else if (starters) {
         // Send regular starters
-        socket.emit('conversation_starters', { starters });
+        socket.emit('conversation_starters', { 
+          starters: starters,
+          userId: userId
+        });
       }
       
     } catch (error) {
@@ -242,6 +318,32 @@ io.on('connection', (socket) => {
       
     } catch (error) {
       console.error('Error in typing_stop handler:', error);
+    }
+  });
+  
+  // Handle marking a suggestion as used
+  socket.on('mark_suggestion_used', (data) => {
+    try {
+      if (!participantData) {
+        socket.emit('error', { message: 'You must join a room first' });
+        return;
+      }
+      
+      const { roomId } = participantData;
+      const userId = socket.id;
+      const suggestion = data.suggestion;
+      
+      console.log(`[Server] Marking suggestion as used for user ${userId} in room ${roomId}: "${suggestion.substring(0, 30)}..."`);
+      
+      // Mark the starter as used in the AI moderator
+      aiModerator.markStarterAsUsed(roomId, userId, suggestion);
+      
+      // Send confirmation back to the client
+      socket.emit('suggestion_used_confirmed', { success: true });
+      
+    } catch (error) {
+      console.error('Error in mark_suggestion_used handler:', error);
+      socket.emit('error', { message: 'Failed to mark suggestion as used' });
     }
   });
   
@@ -325,7 +427,18 @@ io.on('connection', (socket) => {
           setTimeout(() => {
             console.log(`[Server] Sending AI response to room ${roomId}`);
             sessionStore.addMessage(roomId, aiResponse);
-            io.to(roomId).emit('system_message', aiResponse);
+            
+            // Check if this is a moderator message (vs a regular system message)
+            if (aiResponse.isModerator) {
+              // Send as moderator message
+              io.to(roomId).emit('system_message', {
+                ...aiResponse,
+                isModerator: true
+              });
+            } else {
+              // Send as regular system message
+              io.to(roomId).emit('system_message', aiResponse);
+            }
           }, 2000);
         }
       } else {
@@ -369,10 +482,11 @@ io.on('connection', (socket) => {
       // Check if room is now empty
       const participants = sessionStore.getRoomParticipants(roomId);
       if (participants.length === 1) {
-        // Notify remaining participant they're alone
+        // Notify remaining participant they're alone with their name
+        const remainingParticipant = participants[0];
         io.to(roomId).emit('system_message', {
           type: 'system',
-          content: 'You are now alone in this space. Waiting for another participant to join...'
+          content: `You are now alone in this space, ${remainingParticipant.name}. Waiting for another participant to join...`
         });
       }
       

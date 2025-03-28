@@ -1159,9 +1159,24 @@ li {
 
 /* Participant info */
 .participant-info {
-    font-size: 0.9rem;
+    font-size: 1rem;
     color: #2b4c3f;
     font-style: italic;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.participant-emoji {
+    font-size: 1.5rem;
+    margin-right: 0.3rem;
+}
+
+/* Message styling updates */
+.message-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
 }
 
 /* Responsive adjustments for conversation page */
@@ -1478,6 +1493,58 @@ li {
     margin: 1.5rem 0;
     line-height: 1.8;
     color: #2b4c3f;
+}
+
+/* Name and emoji selection */
+.name-emoji-selection {
+    margin: 2rem 0;
+    width: 100%;
+}
+
+.name-emoji-options {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    margin: 1.5rem 0;
+    flex-wrap: wrap;
+}
+
+.name-emoji-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem;
+    border-radius: 12px;
+    background-color: rgba(255, 255, 255, 0.5);
+    border: 2px solid rgba(43, 76, 63, 0.1);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 180px;
+}
+
+.name-emoji-option:hover {
+    background-color: rgba(255, 255, 255, 0.8);
+    transform: translateY(-5px);
+    border-color: rgba(43, 76, 63, 0.3);
+}
+
+.name-emoji-option.selected {
+    background-color: rgba(255, 255, 255, 0.9);
+    border: 2px solid rgba(43, 76, 63, 0.5);
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(43, 76, 63, 0.1);
+}
+
+.name-emoji-option .emoji {
+    font-size: 3.5rem;
+    margin-bottom: 1rem;
+}
+
+.name-emoji-option .name {
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: #2b4c3f;
+    text-align: center;
 }
 
 /* Responsive adjustments for ritual page */

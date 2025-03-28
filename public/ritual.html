@@ -89,7 +89,30 @@
                 <div class="threshold-circle"></div>
             </div>
             <p class="threshold-poem">Like rivers meeting at the ocean,<br>you now step into shared stillness.</p>
-            <button class="ritual-button" id="btn-enter-conversation">Enter Conversation</button>
+            
+            <!-- Name and emoji selection -->
+            <div class="name-emoji-selection">
+                <h3>Choose your identity for this conversation:</h3>
+                <div class="name-emoji-options" id="name-emoji-options">
+                    <!-- Options will be dynamically inserted here -->
+                </div>
+            </div>
+            
+            <div class="experience-selection">
+                <h3>How experienced are you with Emergent Grounds?</h3>
+                <div class="experience-options">
+                    <label class="experience-option">
+                        <input type="radio" name="experience" value="beginner">
+                        <span>I'm new (help me set the tone)</span>
+                    </label>
+                    <label class="experience-option">
+                        <input type="radio" name="experience" value="experienced">
+                        <span>I'm experienced (standard experience)</span>
+                    </label>
+                </div>
+            </div>
+            
+            <button class="ritual-button" id="btn-enter-conversation" disabled>Enter Conversation</button>
         </div>
     </div>
 
@@ -127,6 +150,19 @@
         // Ritual state
         let roomId = null;
         let participantName = null;
+        let selectedEmoji = null;
+        
+        // Name-emoji pairs for selection
+        const nameEmojiPairs = [
+            { name: "Flowing Stream", emoji: "🌊" },
+            { name: "Standing Stone", emoji: "🪨" },
+            { name: "Morning Dew", emoji: "💧" },
+            { name: "Ancient Oak", emoji: "🌳" },
+            { name: "Gentle Breeze", emoji: "🍃" },
+            { name: "Steady Mountain", emoji: "⛰️" },
+            { name: "Rising Mist", emoji: "🌫️" },
+            { name: "Quiet Meadow", emoji: "🌾" }
+        ];
         
         // Helper function to show a step and hide others
         function showStep(stepToShow) {
@@ -143,6 +179,15 @@
         btnStartRitual.addEventListener('click', () => {
             showStep(stepBreathing);
             startBreathingAnimation();
+            
+            // Disable the continue button initially
+            btnAfterBreathing.disabled = true;
+            
+            // Enable the continue button after 5 seconds
+            setTimeout(() => {
+                btnAfterBreathing.disabled = false;
+                btnAfterBreathing.classList.add('active');
+            }, 5000);
         });
         
         // Step 2: Breathing animation
@@ -209,14 +254,78 @@
             
             // Start threshold animation
             document.querySelector('.threshold-circle').classList.add('animate-threshold');
+            
+            // Generate name-emoji options
+            generateNameEmojiOptions();
+        });
+        
+        // Generate random name-emoji options for selection
+        function generateNameEmojiOptions() {
+            const optionsContainer = document.getElementById('name-emoji-options');
+            optionsContainer.innerHTML = '';
+            
+            // Shuffle the array and take the first 2 options
+            const shuffled = [...nameEmojiPairs].sort(() => 0.5 - Math.random());
+            const options = shuffled.slice(0, 2);
+            
+            options.forEach(option => {
+                const optionElement = document.createElement('div');
+                optionElement.className = 'name-emoji-option';
+                optionElement.innerHTML = `
+                    <div class="emoji">${option.emoji}</div>
+                    <div class="name">${option.name}</div>
+                `;
+                
+                // Add click handler
+                optionElement.addEventListener('click', () => {
+                    // Remove selected class from all options
+                    document.querySelectorAll('.name-emoji-option').forEach(el => {
+                        el.classList.remove('selected');
+                    });
+                    
+                    // Add selected class to this option
+                    optionElement.classList.add('selected');
+                    
+                    // Store the selection
+                    participantName = option.name;
+                    selectedEmoji = option.emoji;
+                    
+                    // Check if we can enable the continue button
+                    checkThresholdComplete();
+                });
+                
+                optionsContainer.appendChild(optionElement);
+            });
+        }
+        
+        // Check if both name/emoji and experience level are selected
+        function checkThresholdComplete() {
+            const experienceSelected = document.querySelector('input[name="experience"]:checked');
+            btnEnterConversation.disabled = !(selectedEmoji && experienceSelected);
+        }
+        
+        // Experience level selection
+        const experienceRadios = document.querySelectorAll('input[name="experience"]');
+        experienceRadios.forEach(radio => {
+            radio.addEventListener('change', () => {
+                // Check if we can enable the continue button
+                checkThresholdComplete();
+            });
         });
         
         // Enter conversation
         btnEnterConversation.addEventListener('click', () => {
-            // Store ritual completion in session storage
+            // Get the selected experience level
+            const selectedExperience = document.querySelector('input[name="experience"]:checked').value;
+            const suggestionThreshold = selectedExperience === 'beginner' ? 0.70 : 0.55;
+            
+            // Store ritual completion, name, emoji, and experience level in session storage
             sessionStorage.setItem('ritualComplete', 'true');
             sessionStorage.setItem('roomId', roomId);
             sessionStorage.setItem('participantName', participantName);
+            sessionStorage.setItem('participantEmoji', selectedEmoji);
+            sessionStorage.setItem('experienceLevel', selectedExperience);
+            sessionStorage.setItem('suggestionThreshold', suggestionThreshold);
             
             // Redirect to conversation page
             window.location.href = 'conversation.html';

@@ -29,10 +29,6 @@
             <a href="index.html" class="back-link">← Return Home</a>
             <div id="participant-info" class="participant-info"></div>
         </div>
-        <!-- Optional ritual/reflection prompt area -->
-        <div class="ritual-prompt">
-            <p>Take a moment to breathe and set an intention for this conversation.</p>
-        </div>
         
         <!-- Conversation visualization area -->
         <div class="visualization-container">
@@ -90,7 +86,8 @@
         // Participant data
         let participantData = {
             roomId: null,
-            name: null
+            name: null,
+            emoji: null
         };
         
         // Initialize harm detection, visualization, and typing events
@@ -169,55 +166,88 @@
         }
         
         // Helper function to create message elements
-        function createMessageElement(message) {
+function createMessageElement(message) {
             const messageDiv = document.createElement('div');
             
             if (message.type === 'system') {
                 // System message
                 messageDiv.className = 'message system-message';
-                messageDiv.innerHTML = `<p>${message.content}</p>`;
+                
+                // Check if this is a moderator message (vs a regular system message)
+                if (message.isModerator) {
+                    messageDiv.classList.add('moderator-message');
+                    messageDiv.innerHTML = `<p><span class="facilitator-label">Facilitator:</span> ${message.content}</p>`;
+                } else {
+                    messageDiv.innerHTML = `<p>${message.content}</p>`;
+                }
             } else {
                 // Participant message
                 const isCurrentUser = message.sender === socket.id;
                 messageDiv.className = `message participant-message ${isCurrentUser ? 'participant-1' : 'participant-2'}`;
                 
+                // Get emoji for current user or use a default
+                let emoji = '🌱'; // Default emoji
+                if (isCurrentUser && participantData.emoji) {
+                    emoji = participantData.emoji;
+                }
+                
                 messageDiv.innerHTML = `
+                    <div class="message-header">
+                        <span class="participant-emoji">${emoji}</span>
+                        <span class="participant-name">${message.name}</span>
+                    </div>
                     <div class="message-content">
                         <p>${message.content}</p>
                     </div>
-                    <div class="participant-name">${message.name}</div>
                 `;
             }
             
             return messageDiv;
         }
         
-        // Check if ritual is complete when page loads
-        window.addEventListener('load', () => {
-            // Show loading overlay
-            loadingOverlay.style.display = 'flex';
+    // Check if ritual is complete when page loads
+    window.addEventListener('load', () => {
+        // Show loading overlay
+        loadingOverlay.style.display = 'flex';
+        
+        // Check if ritual is complete
+        const ritualComplete = sessionStorage.getItem('ritualComplete');
+        const storedRoomId = sessionStorage.getItem('roomId');
+        const storedName = sessionStorage.getItem('participantName');
+        const experienceLevel = sessionStorage.getItem('experienceLevel') || 'experienced';
+        
+        // Set the suggestion threshold based on experience level
+        const suggestionThreshold = experienceLevel === 'beginner' ? 0.7 : 0.55;
+        console.log(`Experience level: ${experienceLevel}, Suggestion threshold: ${suggestionThreshold}`);
+        
+        const storedEmoji = sessionStorage.getItem('participantEmoji');
+        
+        if (ritualComplete === 'true' && storedRoomId && storedName) {
+            console.log('Ritual complete, joining conversation with:', {
+                roomId: storedRoomId,
+                name: storedName,
+                emoji: storedEmoji,
+                experienceLevel: experienceLevel
+            });
             
-            // Check if ritual is complete
-            const ritualComplete = sessionStorage.getItem('ritualComplete');
-            const storedRoomId = sessionStorage.getItem('roomId');
-            const storedName = sessionStorage.getItem('participantName');
+            // Store emoji in participant data
+            participantData.emoji = storedEmoji;
             
-            if (ritualComplete === 'true' && storedRoomId && storedName) {
-                console.log('Ritual complete, joining conversation with:', {
-                    roomId: storedRoomId,
-                    name: storedName
-                });
+            // If ritual is complete and we have room info, join with that info
+            socket.emit('join_with_ritual', {
+                roomId: storedRoomId,
+                name: storedName,
+                experienceLevel: experienceLevel,
+                suggestionThreshold: suggestionThreshold
+            });
                 
-                // If ritual is complete and we have room info, join with that info
-                socket.emit('join_with_ritual', {
-                    roomId: storedRoomId,
-                    name: storedName
-                });
-                
-                // Clear session storage
+                // Clear session storage except for emoji
                 sessionStorage.removeItem('ritualComplete');
                 sessionStorage.removeItem('roomId');
                 sessionStorage.removeItem('participantName');
+                sessionStorage.removeItem('experienceLevel');
+                sessionStorage.removeItem('suggestionThreshold');
+                // Keep participantEmoji in session storage for page refreshes
             } else {
                 console.log('Ritual not complete, redirecting to ritual page');
                 // Redirect to ritual page if ritual not complete
@@ -233,8 +263,29 @@
             // Store participant data
             participantData = data;
             
-            // Display participant info
-            participantInfo.textContent = `You are: ${data.name}`;
+            // Make sure experienceLevel and suggestionThreshold are set
+            if (!participantData.experienceLevel) {
+                participantData.experienceLevel = sessionStorage.getItem('experienceLevel') || 'experienced';
+            }
+            
+            if (!participantData.suggestionThreshold) {
+                // Set the suggestion threshold based on experience level if not provided
+                if (participantData.experienceLevel === 'beginner') {
+                    participantData.suggestionThreshold = 0.7;
+                } else {
+                    participantData.suggestionThreshold = 0.55;
+                }
+            }
+            
+            console.log('Participant data:', participantData);
+            console.log(`Experience level: ${participantData.experienceLevel}, Suggestion threshold: ${participantData.suggestionThreshold}`);
+            
+            // Get emoji from session storage
+            const emoji = sessionStorage.getItem('participantEmoji');
+            participantData.emoji = emoji;
+            
+            // Display participant info with emoji
+            participantInfo.innerHTML = `<span class="participant-emoji">${emoji}</span> You are: <strong>${data.name}</strong>`;
             
             // Clear any example messages
             messagesContainer.innerHTML = '';
@@ -256,10 +307,20 @@
                 starterButton.className = 'starter-button';
                 starterButton.textContent = starter;
                 
-                // When clicked, insert the starter text into the input field
+                // When clicked, insert the starter text into the input field and mark as used
                 starterButton.addEventListener('click', () => {
+                    // Insert the text into the input field
                     messageInput.value = starter;
                     messageInput.focus();
+                    
+                    // Mark this suggestion as used
+                    socket.emit('mark_suggestion_used', { suggestion: starter });
+                    
+                    // Hide the starter after a short delay (for better UX)
+                    setTimeout(() => {
+                        starterButton.style.opacity = '0.5';
+                        starterButton.style.pointerEvents = 'none';
+                    }, 100);
                 });
                 
                 startersContainer.appendChild(starterButton);
@@ -354,10 +415,20 @@
                     starterButton.className = 'starter-button';
                     starterButton.textContent = starter;
                     
-                    // When clicked, insert the starter text into the input field
+                    // When clicked, insert the starter text into the input field and mark as used
                     starterButton.addEventListener('click', () => {
+                        // Insert the text into the input field
                         messageInput.value = starter;
                         messageInput.focus();
+                        
+                        // Mark this suggestion as used
+                        socket.emit('mark_suggestion_used', { suggestion: starter });
+                        
+                        // Hide the starter after a short delay (for better UX)
+                        setTimeout(() => {
+                            starterButton.style.opacity = '0.5';
+                            starterButton.style.pointerEvents = 'none';
+                        }, 100);
                     });
                     
                     startersDiv.appendChild(starterButton);
@@ -406,11 +477,13 @@
                 
                 // Check conversation health and resurface starters if needed
                 const currentHealth = window.conversationVisualization.soilHealth;
-                console.log(`Current conversation health: ${currentHealth}`);
+                // Make sure we're using the correct threshold based on experience level
+                const userThreshold = participantData.experienceLevel === 'beginner' ? 0.7 : 0.55;
+                console.log(`Current conversation health: ${currentHealth}, User threshold: ${userThreshold} (${participantData.experienceLevel})`);
                 
-                // If health drops below 55% and we've already hidden starters, resurface them
-                if (currentHealth < 0.55 && messageCount >= 3 && conversationStarters.style.display === 'none') {
-                    console.log('Conversation health below 55%, resurfacing starters');
+                // If health drops below user's threshold and we've already hidden starters, resurface them
+                if (currentHealth < userThreshold && messageCount >= 3 && conversationStarters.style.display === 'none') {
+                    console.log(`Conversation health below ${userThreshold}, resurfacing starters for ${participantData.experienceLevel} user`);
                     
                     // Get smart suggestions based on conversation context
                     // Pass the last 10 messages for context and the current health score
@@ -429,7 +502,8 @@
                     
                     socket.emit('get_conversation_starters', { 
                         health: currentHealth,
-                        context: lastMessages
+                        context: lastMessages,
+                        suggestionThreshold: userThreshold
                     });
                 }
             }
@@ -532,6 +606,12 @@
                     window.conversationVisualization.updateSoilHealth(Math.min(1.0, currentHealth + 0.05));
                 }
             }, data.duration * 1000);
+        });
+        
+        // Handle confirmation that a suggestion was marked as used
+        socket.on('suggestion_used_confirmed', (data) => {
+            console.log('Suggestion marked as used:', data);
+            // We could add additional UI feedback here if needed
         });
         
         // Handle force disconnect
